@@ -2,9 +2,11 @@
 
 A self-contained **automatic vampire-survivors** prototype — an undying knight (and friends) grind down an endless horde on their own. Everything (art, audio, world) is generated or embedded, so the whole game is a single HTML file with no build step and no external assets.
 
+### ▶ Play it now: **https://kamilch1k.github.io/automatic-vampsurv/**
+
 ## Play
 
-Open **`revenant.html`** in any modern browser. That's it.
+Use the link above, or open **`index.html`** in any modern browser. That's it.
 
 - The hero fights and moves automatically; you steer the *meta*: pick a champion and a realm, then spend **Gold** (per-run power) in the Forge and **Souls** (permanent) in Ascend.
 - Save/Load via copyable **codes** (bottom-right of the shop).
