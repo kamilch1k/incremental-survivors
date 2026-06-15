@@ -206,6 +206,20 @@
   #hpFill{background:var(--hp) !important;box-shadow:inset 0 2px 0 rgba(255,255,255,.18) !important;}
   #xpFill{background:var(--xp) !important;box-shadow:inset 0 2px 0 rgba(255,255,255,.22) !important;}
   .barLab{color:#1a130c !important;}
+  /* ---- quests / missions ---- */
+  #questPane{display:none;}
+  .quest{background:var(--panel2);border:2px solid var(--ol);box-shadow:inset 2px 2px 0 rgba(255,236,200,.10),inset -2px -2px 0 rgba(0,0,0,.5);padding:9px 11px;margin-bottom:8px;}
+  .quest.done{border-color:rgba(154,208,106,.55);}
+  .quest .qhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .quest .qnm{font-weight:600;font-size:13px;color:var(--ink);}
+  .quest .qrew{font-size:10px;letter-spacing:.04em;color:var(--lume);white-space:nowrap;text-transform:uppercase;}
+  .quest.done .qrew{color:var(--void2);}
+  .quest .qds{font-size:11px;color:var(--muted);margin:2px 0 6px;}
+  .quest .qbar{position:relative;height:14px;background:#0a0705;border:2px solid var(--ol);overflow:hidden;}
+  .quest .qfill{height:100%;background:var(--lume);box-shadow:inset 0 2px 0 rgba(255,255,255,.18);}
+  .quest.done .qfill{background:var(--void2);}
+  .quest .qprog{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;letter-spacing:.06em;color:#1a130c;}
+  .cards{max-width:780px !important;}
 </style>
 </head>
 <body>
@@ -292,13 +306,15 @@
       <div id="soulRow">◈ Souls <b id="soulHdr">0</b></div>
     </header>
     <div class="tabs">
-      <button class="tab on" data-tab="forge">Forge · Gold</button>
-      <button class="tab" data-tab="soul">Ascend · Souls</button>
+      <button class="tab on" data-tab="forge">Forge</button>
+      <button class="tab" data-tab="soul">Ascend</button>
+      <button class="tab" data-tab="quest">Quests</button>
     </div>
     <div id="forgePane" class="pane"></div>
     <div id="soulPane" class="pane">
       <div class="note">Souls are minted every time your revenant falls. Their power is <b>permanent</b> — surviving death, reforging, everything. Spend them to make every future run begin stronger.</div>
     </div>
+    <div id="questPane" class="pane"></div>
     <footer>
       <button class="mini" id="saveBtn">Save code</button>
       <button class="mini" id="loadBtn">Load code</button>
@@ -322,7 +338,7 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const TAU=Math.PI*2;
 /* ---- pixel sprites: 0x72 DungeonTileset II (CC0, by Robert Norenberg) ---- */
 const SPRITES={"knight":{"w":16,"h":28,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAcCAYAAABoMT8aAAABFUlEQVR4nO2UsUoDQRCGv5VU1pL2yMBVphG0TxHhKvEhRJ/AwiewSGthxEewCMEioIVvYGM9YCuWYrs2Duzu7W4ESZe/mdvZ3X//+Wc42GILcPYhIj53QFVdLh8RiIhfjYcA7E2+owOHN19VEmeXu7cPAHJENZKBqroOvB3owK/GQz5fdntqiiUYQh9MiSkLEaoZpJunjw8A3Nr6N85GDQDt/lFcQkna691TtJ5mlKqqKxIAHJwf93LP12eRkp0aQajE4vTqPtpfS7AOmycwHyyaB4aqiWknANrl/G8EuQ7MRg3tcl4fpNyrhssMaY8g93KoYJHk/t2FYgnviVnNyUU0zkUCuxwaZbOf5nsQEZ/7tZXyAD9KKmUdwYxlBgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAcCAYAAABoMT8aAAAA/0lEQVR4nGNgGAWjgIGBkYGBgUFJSek/LgX37t1jxGuAkpLS/x06YnABEYdvKApMpnzBawiGC2CGIRuEzxAWdGd6MDD836EjxvDmABeGa3C6AB0ge8vjyivCXkDWSNBKNBezoEsGbFmDVVO3ojwDAwMDg6q2KYo4hgEwcH7WbhS+CxIb5tJ79+4x4jSAgYGBwTDNFUNsT3sKikuY8BmA7BIY7VI5B0WeoAGEAO0NgIUDjIaFAQzgDUT0mGBgYGBQ3TSTOAOwxUC3ojyD6qaZ+BMSNlthoBSLoRgGYLMZ2QUb0MQojgWcXniIFljyfukoyRkGcOZG5IDCJc7AwMAAAPlRWMpPpzBzAAAAAElFTkSuQmCC"]},"archer":{"w":32,"h":32,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAYRJREFUWIXtlDFPwkAUx/+HmBIVmDAFIyYX7SSJC2OThsnVqR/ByRHWxoRvwKdwQjYHBxN24uBETKMsgJuVmFSN58KRHqVwpSQu95vu3r2+97++dw9QKBQKhULxzxAZJ0opADAZ3+OdFHn+/IXrulIC0lJeUyySna0rh18LfVoDn0HyYrEFLEu8LtJKeRksksUD+1gZN3EJpgkBIFTP/s11ZEDDdqQSc1JRB2ZOAwBm5jRBDKfaaKPaaIdscYkU0PV8dne6j67nM207DUi+go0JMHMaOX96AwD43z/MKOrCeadeQ6deC9k2JqDr+cC0SY2ijv5wNHuGhu2gVMijVMgL3wT20n8rUgBvvL1MhvSHI+HMIlkYthNqOMN2cFXWZHMDWDEHAt1PKKXCrXiioIi4yYEYcwAAKKXs4KKCk9sXAIuHUmvgw3Vd6biRJVjGuKlj3NRxf1kW7PN7GWKP4nnWSZpIwKS3hUlvN1HSRAI476+Pwj5/dLZWnNhNyNfBRouyy/AHyR1sJ0HWjUgAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAb9JREFUWIXtlbtKA0EUhr8x6oq3pFGiQYVBt1KwsRTEytYqj2BlqW0Q8gZ5Ciu1s7AQ0ougIAQcTES8VJqkWS+MhW7c3eyaWY3Y7Nfszjln5vw7e84MJCQkJCQk/DPCJEhKCaC9tgwp8chbaLxSylhAr3EksCJGWu/HuqHDYmYHewRSGouIJQBgYer544kV6i/VHI3hzgL0mAZmSIlj3eDsut90ihFGO6CUcusAgFLN+XsB3oTB/1nZ3Ylc0M4XYgmI/AXLoxaAXh61fGJclrb3WNrea7PFJVJAue7ow/lxynVHW329EGjDbvHdDoi18wcAnJdXbU9kff6DrVUOtlbbbF0TUK478NlO9kSWyu1d6xyw8wUmx9JMjqV9czxj492KFOAW3vDAgKjc3vl8K2IEO19oKzg7X2BzOvx8iOLbNvS0nyDwVW4ir4i4yd2FOyKlJEOKR950bn2Buf0r4OtU9FKqOeQsIcoXl0YCjE5CpRTei+e+mOW+mOVoY9oX545vHPOGiX0XBAmKiEtsAc2TFM2ToV8l/ZGA4H3wVD31+dMzi77Yrgvw8lQ9RSnVKmAppQ6zm2B8HUcl72TvxDuqOpEoJn6/WQAAAABJRU5ErkJggg=="]},"wizard":{"w":16,"h":28,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAcCAYAAABoMT8aAAABJUlEQVR4nGNgGAWjgNpAXsL4v7yE8X9S9DChC1jZdTGQYggLNkEruy4GhkNlKIY8fHGWEZtaDEF5CeP/VnZdKGJ/nfgZTjakYzUIhYOu+a8TP4aNJxvSUQzB6QJ0zcz7PsLZxw6VwQ0h2QXoLoEbQGr0YQXyEsb/L+9f+f/v97f/uwLs/v/9/vb/3+9v/29tCIdjmBjMQqzRCANKim4MDAwMDNMyVDDEYGGAkZBIBTgNKF6+niHbgpsh24IbRTzbgpvh3v1dDER5oXj5egwxD3wuePjiLKNPZBdDTPwFhmsn9hBwPBYDYOCvEz9D801lnIYoKboRF4j4DMHrAnRD8AGUQIQnZaR0z8DAwMAQj2CiuwgjL2CzZcvyMgYtCxcGBgbMhAQA912Da9HA+6oAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAcCAYAAABoMT8aAAABPUlEQVR4nGNgGAWjAA3ISxj/l5cw/k+KHiZ0ASu7LgZSDMEwANkQYgxiRBeQlzD+b2XXBecfO1TGwMDAwPDwxVkMtQwMDAwshGywsuti+OvEz8DQkP4fm0EoHHTb/zrxYxh4siEdxRCcXkDXzLzvI5x97FAZ3BCSXYDuErgBpMY/DGC4YMtySKhvnzgVr8apJ74yPHxxlhFrLGhZuDBsnziVoXj5egYGBgaGHZ1ZcDmP8mkQAxTdGBgYCESjElTRtAwVDDFYIGJNiaQAnAYUL1/PkG3BzZBtwY0inm3BzXDv/i54oOP1AiwMkIEHPhc8fHGW0SeyiyFy4X2Gayf2EHA8FgOQQfNNZZyGKCm6YQ9EeQnj/+YNM1EMIQTgYQBPxkhpnoGBgeGa+h4GLQsXwgYwMCDyPgrIRBVD9xYArBhyJV/F/YoAAAAASUVORK5CYII="]},"necro":{"w":16,"h":20,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAArUlEQVR4nGNgGAUUA0YYQ0lJ6T8pGu/du8fIwMDAwIIsaMttQpTmw1/PwNlMpNiKDbDgknD48wO3C4gxgIGBgaGb8Q2GWOl/ERQ+xV7Aa8Dls5sZLp/djMInyQBiAN4w0DX2xeCXMhAZBgdYODACrPS/CMMBFg7iDEA3BJtmBgZoUoYlY1wp0eHPD7jmw1/PwJMxiguI0YwNsCArxAWQ5Q6jycENaP55BacB+AAAl6I0Q4p4SdIAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAAu0lEQVR4nGNgGPKAEcZQUlL6T4rGe/fuMTIwMDCwIAvacpsQpfnw1zNwNhMptmIDLLgkHP78wO0CYgxgYGBg6GZ8gyFW+l8EhU+xF/AacPnsZobLZzej8EkygBiANwx0jX0x+KUMRIbBARYOjAAr/S/CcICFA7cByAkE3RBsmhkYkJIyAwMkOWNLjQ5/fsA1H/56Bp6M8XqBWAA3gNTMhNUFhJyPDaBEI670jyx+GE0OxYDmn1dw2oQLAAAfsjgwqiZDxwAAAABJRU5ErkJggg=="]},"goblin":{"w":16,"h":16,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAh0lEQVR4nGNgGAUDDxjRBZSUlP4T0nTv3j24PhZsCvjlDRh4jP5i1fx0/WUUPhMh2wgBvAY8XX8ZxUZ028l2AXI44TTgQMs8Bn55AwZ+eQO4GL+8AcPtq6eJd8GZbbNRAvPMttkYarBGI8zWjw8voNgOE0OORqwuQNYIU4wshgwwDMCmAZ8hAP+fN/SigS/rAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhUlEQVR4nGNgGAXDADCiCygpKf0npOnevXtwfSzYFPDLGzDwGP3Fqvnp+ssofCZCthECeA14uv4yio3otpPtAuRwwmnAgZZ5DPzyBgz88gZwMX55A4bbV08T74Iz22ajBOaZbbMx1GCNRpitHx9eQLEdJkYwGpE13rt3j1FJSek/shgyAAA9nS7fL5fAywAAAABJRU5ErkJggg=="]},"orc":{"w":16,"h":20,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAAwUlEQVR4nGNgGAWM6AJKSkr/idF47949RgYGBgYWbJL88gYMPEZ/cWp+uv4ynM1EjG34AG0N+HKOmeHLOWYMMaIN+PjwAsPHhxcwxIgyAN0mdACLLZwGnNk2m4Ff3oCBX94ARZxf3oDh9tXThF0AMwQ9Os9sm43Cx5qQiEkHeBOS4aO7DAyPcLvsKRIbqwG6sr9w62ZgYDiAZDjFCQmrCxYxajIwMGDGOSJGEOJYDYBphgUUAwMi3tHFsXoBXRE+cQA1AE1BGpaIkgAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAAtElEQVR4nGNgGAUUA0Z0ASUlpf/EaLx37x4jAwMDAws2SX55AwYeo784NT9dfxnOZiLGNnwArwFfzjEzfDnHjCFGtAEfH15g+PjwAoYYUQag24QOYIGN04Az22Yz8MsbMPDLG6CI88sbMNy+epqwC2CGoMfGmW2zUfhY0wEx0QhLBxRHI9aEZPjoLgPDI9yanhIyQFf2F15bDyAZThsvLGLUZGBgwEw0iChFiOPNjbCQxicOAMUZPuN9wJYBAAAAAElFTkSuQmCC"]},"masked":{"w":16,"h":20,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAA80lEQVR4nGNgGAWM6AJKSkr/idF47949RgYGBgYWbJL88gYMPEZ/cWp+uv4ynI3VAGwK0YGSktL/e/fuMeI1gIGBgeH21dNYxVW1TTFdAPP/x4cXGD4+xFQMMwzGxzCAgYGBIVeOHc6e/OgnIQdiGoBN08a57Rh8/+RKBgYGHNEIiwXkQLx99TSKV1S1TRnu3bvHiNcAGMAVG3hj4cs5ZjibX94ARe7jwwv4E5Lho7u4zGVgYGBgOIDExmqAruwv/AY8QrCZ8KokAmB1weXHbBCb/n9GEXdg5IWyEFGNMxAP/P8MDygGBkQqRRfH6gV0RfjEAdLUZIBnZc7HAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAA8UlEQVR4nGNgGAUUA0Z0ASUlpf/EaLx37x4jAwMDAxM2SX55AwbpQF28BsAsYiFk0+2rp7GKq2qbMuB0AQMDA8PT9ZdRFMM0IGvGMADmrI8PLzDkyrETchwDAwMWL8A0Tn70Ey62cW47ipqNc9sZ/JMrGRgY0GIBOQb45Q0YPj68AJe7ffU03Okw9r179xixRiO/vAEDj9FfuBhyeCCDe/fuMRKMBQYGBpQo/XKOmeHjwwvwdIDTgC/nmIkxG7sBho/u4tV0gJABurK/8BvwCMHGmZCIBVhdcPkxG8Sm/59RxB0YeaEsRBrBmxthIY1PHACQa0uU6BJmmAAAAABJRU5ErkJggg=="]},"skelet":{"w":16,"h":16,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqElEQVR4nGNgGGjAiMxRUlL6T4yme/fuwfWxoEtunNvOoGXhglOzqrYpCp+JGBvxAZwGqGqbYtiGzqetCzbObWfYOLcdxWYYHxlgBCIMIAfk7aunkcQqiXMBsQBvOoA52T8Z1VbkdIATKCkp/f/7/e3/v9/f/seXwLB6AZsGXIZgGABTCAs4ZDZRSV1JSen/5f0r/yspKaFgmBi6eozAQFYECyxsYjAAABi7RdOrKMILAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkElEQVR4nGNgGAWMyBwlJaX/xGi6d+8eXB8LuuTGue0MWhYuODWrapui8JmIsREfwGmAqrYphm3ofNq6YOPcdoaNc9tRbIbxkQFGIMIAckDevnoaSaySOBcQC/CmA5iT/ZNRbUVOBygGoBsCczpy6CNrxgqUlJT+X96/8v/f729R8OX9K/9jS6l4XYANoLsAACj5PajcPFtBAAAAAElFTkSuQmCC"]},"zombie":{"w":16,"h":16,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0klEQVR4nGNkwAGUlJT+w9j37t1jhPHv3bvHiKyOCZfm0h2yDKU7ZBk0W1UZlJSU/m+c247VIqwGwMCWsxwM16tvM+DSzMDAwMCCy+ndHo8ZGBgY8GrGagADAwNDR3YEg6aRPl6NMIDTC/7JlQz+yZUofJIMIBbgNEA6UJdBOlAXhU9fFxALGLEJKikp/e/IjkARq5i6AiMVMjDgiEYYQI3KFVjV4PQCsubr5y7itATDSfjSvX9yJYY3sHrh+rmLDBVTUZ2MHiZ4XQBjw2zDJgYDAILlQW+Z6ZPOAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAyElEQVR4nGNgoBAw4pJQUlL6D2Pfu3ePEca/d+8eih4mXJpLd8gylO6QZdBsVWVQUlL6v3FuO1aLsBoAA1vOcjBcr77NgEszAwMDAwsup3d7PGZgYGDAqxmrAQwMDAwd2REMmkb6eDXCAE4v+CdXMvgnV6LwSTKAWIDTAOlAXQbpQF0UPn1dQCzAmhKVlJT+d2RHoIhVTF2BkQoZGHBEIwygRuUKrGpwJiSY5uvnLqLIobuCEV0zvkR0/dxFDK9gGIBVJxpANgAA2/FAXDHn9V0AAAAASUVORK5CYII="]},"imp":{"w":16,"h":16,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApElEQVR4nGNgGAV4gZKS0n8lJaX/+MSY8Gm25TYhKMaCTSMxYnhdsENHDIOPLgYDjNhsw6WYgYGBwePKK4Z79+7B9eEMAwYGBgbllVsZlFduReGjA7wGEAMwAhEZpOo4MTAwMDBUaHOi8Ik2AKYRmX/gymfCBrTel2NgYGBgOPz1DFwMEf+vUNRiDQNkjbAQRxZDBhjRyMCAmnBgBmATY2BgYAAArFk17vCdCd8AAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAl0lEQVR4nGNgGAW0BUpKSv+VlJT+4xNjwqfZltuEoBgLNo3EiOF1wQ4dMQw+uhgMMGKzDZdiBgYGBo8rrxju3bsH14czDBgYGBiUV25lUF65FYWPDvAaQAzACERkkKrjxMDAwMBQoc2JwifaAJhGZP6BK58JG9B6X46BgYGB4fDXM3AxRPy/QlGLNRaQ+ffu3WPEJgZjAwAWpi5JKC0DOgAAAABJRU5ErkJggg=="]},"chort":{"w":16,"h":24,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAA20lEQVR4nO1SMQ6CQBAciAk/oHcJlddq4wd8h51vMFS+hgeQ+AErWqhIeAAJNbEgZyPJwe4iUlk4zV525ub2dhf44wdBRHY1T0S271qriSTel4RVmbOXiMhWZc60m9Xlagbxbg8AuJuQiQfOBftCEhjxsmta17WnGnwL1SBKM0RpxnKLDZZCncL5cAEAXLc8p4KIrLssWnTveJLJ3CPuBAChB1PBJ44ZzFUgcf5UMOy7Fvuu1XtARDYJDI5xoxWBU9GMviKO8VGFuD2LUS4JzPs0NmcVDOdpwzTuBcUDcHpTUF6vAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAArElEQVR4nGNgGAWjYFACJSWl/2TLKykp/f/7/e1/XIqwybNgU3j76mkGVW1TDENuXz2NoRarATCwQ0cMzva48gqrGkZ0J2LTjG7IvXv34PqY0BXVsutg1YzLUAwDYEB55VYG5ZVbMcSINoBYgDMQk8wyGRgYGBiqFTHFcAIlJaX/yHGNi0bWgzMW8AG8sQBLLIRonC6oZddhsFbFnmgYGCBpAdkFOL2ArAifHACMYWK7wPyUOgAAAABJRU5ErkJggg=="]},"ogre":{"w":32,"h":32,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABuElEQVR4nO2XT2rCQBTGv9Sim4QcQDSQfSDkBF7Bg3gLb+BS6BWyc519RYTQVSEQgwcQ3SiEdCETJ3Rm3htr6aJ+O+Obeb/31wg89dR/l3PPoTAMG45dURTk/a/3OPeDGG5S08YpGgrixRbg0fpzALIEYRg2RVE4qrqfNr3fB5CdTxwPWXNsv3OTGvs0BwAMp1HnnHhOSVsC4VQ03b2iJkYLICL3gxiHcqu0yeZv8IMYKkA/iPH58U4CkhkAvqcXuKV4vVoqR3K9WpLOAUMP6BpPSI5aWe85y79+EwrnwtGh3HaaUDynFtI+zY0bkZUBN6lxKK/PZ+MBFrtza2caRV3vsABkqZxwLjc1sBUAcG3ELM2BysNsDCx2Z2VzdnXLnE6sVayq82w8wD7NlQ142vTYW5IFIC4bTiNkzRF51W8hVCBuUvN+LbkAJggTCEfkGKo0cTxEo4v2UnlKhHSjaGzCieN1Pt+c6p0D14xQQELsEpgi/onYAHLNbUSdY+0Bm+jzqo9odGEDszJgE72AjUYXFjgLwCYiWZwzxhK0r1+V114ov5KpJE8OZQsw/pio9oFupm1shb4A4K7MORO6AYAAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABtElEQVR4nO2VO2rDQBCGf8XBbiR0AGEL1C8IncBX0EF8C9/ApSFXUOdafYwxiFQBgSJ0AGM3MQilCKus5X3MOgkp4r/cx8w3O48F7rrrv8u55VIURR3lXFmWRvuPtzj3wxhu0poPZ+hMEA+2AD+tPwewToGo0270+wBRFHVlWTqywnOTFk1WAACClF3s8XWTjCkQnc8dj2TURkoA7pRXvUz58gl+GEO274cxXl+ejS2rBOCR+2GMQ7W/2udPvN2spS253ax1fnspa0AkD1J2lVMxamm+lyT/+kkoDp0mKzB3POTd8QLANJCarNBORNILiO22mE2wenuHbG8oWerIAGL1u0mLQ2VvXFU/JABRsihVnWEr8iQMUoY8K4Daw2IGrKr91fCRafhyQ5H+AlmhLWYTNFkh7YDTbkQe0yQAbixIGfLuiKIe9xAyEDdpad81FUAHoQOhSNmfuhE6dzyw6VlpVGxTLtUs0Bbh8PP5cqp2Dny+iAmIi5wCXcTfERlAzLmNTPdIc8Am+qIeg03PZGDSC9hEz2HZ9EwCJwHYRCSKckebAv71ovZ6g/2aQmLnmM4CwAcZtMNSFEkP0QAAAABJRU5ErkJggg=="]},"demonbig":{"w":32,"h":36,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAkCAYAAADo6zjiAAABqElEQVR4nO1WMW6EQAw0USR+wAM22gpaKj4QKQ/Ia6juNXlApPvAVWlJhbIPQEodXXEiRWTOcLbXbJCSgpHQYjDrWa/ZMcCOHTs2gHNu/LOgXPA1hO5+E1wiFELIrHNFHWkwnDi2wk0JSAGPVQEAAKf+Z2z8MNmHc3dDViK1KgMcgYeXVwAA+Hh+mmxf1jNfLSNsDTjnRrzwWZtXszEGqx9LgDLGiRo/TKum8GU9WzHeN36YkZAyqW6Bc25s82raXwTuswT6zWN3/ZbbCpEAl35KBIuPA/VDAlId3IuzKME5W0NSEeI9phpXsmak6U8C/RuW1+Xr0zTGDi31KA4hZFL6lv+6ZMdORfORmaJ4liM5SYy2xP8lQAsoteGg30kFGT0Jtff9+9tN8WnPuZpQM6AF5mzpuRRcJbAEVUNf1nCsCnVEPy04gFGMDueOVcIYls0JB1MG2ryCU1+oAsTBohdRAlR2OVm2QKunqBxbOxvaE1I71g+wcpzy3y+zcbUHCCFkqzoi2ttjIVJI3RDnt4kYURLapFY/ilVaYJ3U6reKgNaEpvghvgH/fChF/4J41AAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAkCAYAAADo6zjiAAABuElEQVR4nO1Xwa3CMAx9fH2JDRigUk7ttacuwBRs0lMHYQ0W4ITEqZwqZYBuwIl/QA5uf+w4tNKXvngSShw59rOTxgb44IP/gKIoHn/mNOY8h9DXEucSIe/9xmpLVYw58t5vUhGuRkAiAQCnagcAOA/PsXFjkLt7byYkHkFRFA/uvN1Wk5FwuB5xuB4n8lxPy9gvApLjxo0hagsaN4a9WRnw3m/oR2uaY1fWcGU9kTkJQM+AyEzKAhA/Z452WwXdfT+G9VgmvkUrgnOat0MlbZnoSo4JyXeAIqVIaOzuPRo3RkfS49FLMB1BDMPtAlfWyRFYkIH5ZeTgl02TU4+S6cV6t9hYXkRzLch5XnP0TQS4sZThXKJvVUPJCa3nkFitHPP1VfoBbkSa55CQ9qkZyHGcQ8ZEgM5R2zzcLsl12i/dC9MRpByTLK1rMF9C3pC4ssap2qkj6QH6V5HsCdtthe7eZzUjBCrbi6oh8Iz6POxC/2eFpSFJ3gHeeMzrfA4hiUQ0NbFuKAXeLXF534/qEUQ7IssnOMc8Gy9Zb0pM/wvmWZD6wZjeav0AGdeMWvXeIkBzzahVj+MH6K8rXVqsLfEAAAAASUVORK5CYII="]},"coin":{"w":8,"h":8,"f":["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAARUlEQVR4nGNgIAW869P7//f72//IYkzIkjy2Agx/rwQyICtiQpaEAWRFTAwEAHEKhIouMX45/AEuyKyznoGZU5iRKF8AAHg2JCEsC9aTAAAAAElFTkSuQmCC","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAJklEQVR4nGNgIAX8/f72/9/vb/8jizEhS2JjMzEQAHRQgAKw+QIAg9AXS8n1t2UAAAAASUVORK5CYII=","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHElEQVR4nGNgIAX8Om33/12f3n9kMSZCmoaEAgDHfQW4cNfSnwAAAABJRU5ErkJggg==","data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAALklEQVR4nGNgIAW869P7//f72//IYkzIkjy2Agx/rwQyICtiYiAA6KAABWDzBQBDUBYhqR9aFQAAAABJRU5ErkJggg=="]}};
-const HERO_SPR={knight:"knight",ranger:"archer",templar:"wizard",warlock:"necro"};
+const HERO_SPR={knight:"knight",ranger:"archer",templar:"wizard",warlock:"necro",paladin:"knight",hunter:"archer",sorcerer:"wizard",reaper:"necro"};
 const ENEMY_SPR=["goblin","orc","masked","skelet","zombie","imp","chort"];
 const BRUTE_SPR=["ogre","demonbig"];
 const IMG={};
@@ -465,8 +481,10 @@ function fresh(){return{
   gold:0,soul:0,runs:0,char:"knight",
   m:{vit:0,power:0,haste:0,orb:0,spin:0,magnet:0,greed:0,wisdom:0,regen:0,swift:0,chain:0,aura:0,wisp:0},
   s:{epow:0,efort:0,head:0,smag:0},
-  best:{wave:1,time:0,kills:0},
-  unlocks:{knight:true,ranger:false,templar:false,warlock:false},
+  best:{wave:1,time:0,kills:0,level:1},
+  lt:{runs:0,kills:0,gold:0,beacons:0,brutes:0},
+  unlocks:{knight:true,ranger:false,templar:false,warlock:false,paladin:false,hunter:false,sorcerer:false,reaper:false},
+  missions:{},
   mapUnlocks:{dungeon:true,green:false,heaven:false,inferno:false},
   muted:false,map:"dungeon",
   lastActive:Date.now(),goldEMA:0
@@ -503,11 +521,25 @@ const CHARS=[
   {id:"ranger",ic:"➹",nm:"Ranger",bl:"Swift and far-striking. Lives by the volley; dies fast if cornered.",tags:["+50% Bolts","Fleet","Fragile"],mods:{bolt:1.5,fire:1.28,move:1.22,hp:0.82},req:g=>g.best.wave>=4,reqTxt:"Reach Wave 4"},
   {id:"templar",ic:"✚",nm:"Templar",bl:"Holy fire and steadfast faith. Burns the dark and mends his own wounds.",tags:["Holy Nova","Regen","Sturdy"],mods:{nova:1.55,magic:1.18,hp:1.15,regenAdd:2.5},req:g=>g.best.time>=180,reqTxt:"Survive 3 minutes"},
   {id:"warlock",ic:"☄",nm:"Warlock",bl:"Commander of dark arts. Frail of body, but his spells swell without end.",tags:["+45% Magic","Greedy","Glass"],mods:{magic:1.45,dmg:1.05,gold:1.25,hp:0.82,orb:0.9},req:g=>g.best.kills>=600,reqTxt:"Slay 600 in one run"},
+  {id:"paladin",ic:"✟",nm:"Paladin",bl:"A knight ordained in holy light — an unbreakable wall that mends and burns.",tags:["+50% HP","Holy Nova","Mending"],mods:{hp:1.5,nova:1.3,regenAdd:2,orb:1.1},req:()=>false,reqTxt:"Mission: Complete 5 runs"},
+  {id:"hunter",ic:"➶",nm:"Hunter",bl:"A relentless tracker. Volleys fly fast and far — but the bones are brittle.",tags:["+70% Bolts","Rapid Fire","Glass"],mods:{bolt:1.7,fire:1.45,move:1.18,hp:0.8},req:()=>false,reqTxt:"Mission: Slay 1,500 foes"},
+  {id:"sorcerer",ic:"✺",nm:"Sorcerer",bl:"Raw arcane mastery, poised between searing nova and relentless spell.",tags:["+50% Magic","Holy Nova","Arcane"],mods:{magic:1.5,nova:1.3,dmg:1.1,hp:0.95},req:()=>false,reqTxt:"Mission: Reach level 18"},
+  {id:"reaper",ic:"⚰",nm:"Reaper",bl:"Death's own hand. Drains the field and hungers ever for gold and souls.",tags:["Dark Magic","Greedy","Lifedrain"],mods:{magic:1.32,dmg:1.15,gold:1.2,hp:0.9,regenAdd:1.5},req:()=>false,reqTxt:"Mission: Survive 4 minutes"},
 ];
 function checkUnlocks(){const nu=[];
   for(const ch of CHARS){if(!G.unlocks[ch.id]&&ch.req&&ch.req(G)){G.unlocks[ch.id]=true;nu.push({nm:ch.nm});}}
   if(typeof MAPS!=="undefined"&&G.mapUnlocks){for(const m of MAPS){if(!G.mapUnlocks[m.id]&&m.req&&m.req(G)){G.mapUnlocks[m.id]=true;nu.push({nm:m.nm});}}}
   return nu;}
+const MISSIONS=[
+  {id:"m_runs",nm:"Trial of Steel",ds:"Complete 5 runs",cur:g=>g.lt.runs,max:5,rewTxt:"Unlock Paladin",reward:{type:"char",id:"paladin"}},
+  {id:"m_kills",nm:"The Long Hunt",ds:"Slay 1,500 foes (lifetime)",cur:g=>g.lt.kills,max:1500,rewTxt:"Unlock Hunter",reward:{type:"char",id:"hunter"}},
+  {id:"m_level",nm:"Arcane Ascent",ds:"Reach level 18 in a run",cur:g=>g.best.level,max:18,rewTxt:"Unlock Sorcerer",reward:{type:"char",id:"sorcerer"}},
+  {id:"m_time",nm:"Beyond Death",ds:"Survive 4 minutes in a run",cur:g=>g.best.time,max:240,fmt:"time",rewTxt:"Unlock Reaper",reward:{type:"char",id:"reaper"}},
+  {id:"m_realms",nm:"Pilgrim",ds:"Discover all 4 realms",cur:g=>Object.values(g.mapUnlocks||{}).filter(Boolean).length,max:4,rewTxt:"+25 souls",reward:{type:"souls",amt:25}},
+  {id:"m_gold",nm:"Golden Hoard",ds:"Earn 100,000 gold (lifetime)",cur:g=>g.lt.gold,max:100000,rewTxt:"+20 souls",reward:{type:"souls",amt:20}},
+  {id:"m_beacons",nm:"Bell-Ringer",ds:"Claim 40 relics (lifetime)",cur:g=>g.lt.beacons,max:40,rewTxt:"+15 souls",reward:{type:"souls",amt:15}},
+];
+function checkMissions(){const nu=[];for(const q of MISSIONS){if(G.missions[q.id])continue;if(q.cur(G)>=q.max){G.missions[q.id]=true;if(q.reward.type==="char")G.unlocks[q.reward.id]=true;else if(q.reward.type==="souls")G.soul+=q.reward.amt;nu.push({nm:q.nm+" ✓"});}}return nu;}
 let curChar=CHARS[0];
 function cm(k){const m=curChar.mods;return m[k]!==undefined?m[k]:(k==="regenAdd"?0:1);}
 const M=()=>G.m,S=()=>G.s;
@@ -608,9 +640,9 @@ function spawnEnemy(){
   const sprK=brute?BRUTE_SPR[(Math.random()*BRUTE_SPR.length)|0]:ENEMY_SPR[(Math.random()*ENEMY_SPR.length)|0];
   enemies.push({x,y,hp,max:hp,spd:(46+Math.min(d*0.26,58))*(brute?0.72:rand(.85,1.15)),r:brute?13:rand(6,8),brute,hue:brute?14:rand(95,140),wob:rand(0,TAU),spr:sprK,fl:(Math.random()*9)|0});
 }
-function earn(g){if(scene==="play")G.gold+=g;}
+function earn(g){if(scene==="play"){G.gold+=g;G.lt.gold+=g;}}
 function killEnemy(e,i){
-  enemies.splice(i,1);run.kills++;
+  enemies.splice(i,1);run.kills++;if(scene==="play"){G.lt.kills++;if(e.brute)G.lt.brutes++;}
   spawnParts(e.x,e.y,e.brute?16:7,`hsl(${e.hue},70%,65%)`);
   gems.push({x:e.x,y:e.y,vx:rand(-1,1),vy:rand(-1,1),val:(e.brute?8:3)*xpMult(),pull:false});
   const g=(1.2+run.time*0.06)*(e.brute?6:1)*goldMult();
@@ -618,7 +650,7 @@ function killEnemy(e,i){
   if(Math.random()<(e.brute?1:0.16))popText(e.x,e.y-10,"+"+fmt(g),"#ffd97a",13);
 }
 function activateBeacon(b,i){
-  const T=BTYPES[b.type];spawnParts(b.x,b.y,26,T.col);AUDIO.sfx("beacon");
+  const T=BTYPES[b.type];spawnParts(b.x,b.y,26,T.col);AUDIO.sfx("beacon");if(scene==="play")G.lt.beacons++;
   if(b.type==="cache"){const g=(30+run.time*1.8)*goldMult()*2.2;earn(g);popText(b.x,b.y-14,"+"+fmt(g)+" gold","#ffd97a",20);}
   else if(b.type==="font"){hero.hp=Math.min(hero.max,hero.hp+hero.max*0.45);popText(b.x,b.y-14,"+HEAL","#7dffb0",20);}
   else if(b.type==="surge"){run.dmgBuff=1.7;run.buffTimer=8;toast("WAR BANNER","×1.7 damage for 8s");popText(b.x,b.y-14,"RALLY","#ff9a6a",20);}
@@ -715,9 +747,11 @@ function endRun(){
   if(scene!=='play'){startRun();return;}
   run.alive=false;shake=26;AUDIO.sfx("death");
   const souls=Math.floor((run.time/20+run.kills/110)*soulBonus());run._souls=Math.max(souls,0);G.soul+=run._souls;
-  if(run.wave>G.best.wave)G.best.wave=run.wave;if(run.time>G.best.time)G.best.time=run.time;if(run.kills>G.best.kills)G.best.kills=run.kills;
-  const newChars=checkUnlocks();
-  const du=$("#dUnlock");if(newChars.length){du.style.display="block";du.textContent="✦ Unlocked: "+newChars.map(c=>c.nm).join(", ");}else du.style.display="none";
+  G.lt.runs++;
+  if(run.wave>G.best.wave)G.best.wave=run.wave;if(run.time>G.best.time)G.best.time=run.time;if(run.kills>G.best.kills)G.best.kills=run.kills;if(run.level>G.best.level)G.best.level=run.level;
+  const nu=checkUnlocks().concat(checkMissions());
+  const du=$("#dUnlock");if(nu.length){du.style.display="block";du.textContent="✦ "+nu.map(c=>c.nm).join("  ·  ");}else du.style.display="none";
+  buildQuests();
   spawnParts(hero.x,hero.y,40,"#c78bff");
   $("#dWave").textContent=run.wave;$("#dTime").textContent=fmtTime(run.time);$("#dKills").textContent=run.kills;
   $("#dSouls").textContent="+"+run._souls+" soul"+(run._souls===1?"":"s")+" minted";
@@ -792,7 +826,7 @@ function drawMinimap(){
   ctx.restore();
 }
 
-let goldEMA=0,lastGold=0;
+let goldEMA=0,lastGold=0,questT=0;
 function hudTick(dt){
   $("#hWave").textContent=run.wave;$("#hTime").textContent=fmtTime(run.time);$("#hKills").textContent=run.kills;$("#hLevel").textContent=run.level;
   if(hero){$("#hpFill").style.width=clamp(hero.hp/hero.max,0,1)*100+"%";$("#hpLab").textContent=Math.ceil(Math.max(0,hero.hp))+" / "+hero.max;}
@@ -801,6 +835,7 @@ function hudTick(dt){
   const inst=(G.gold-lastGold)/Math.max(dt,1e-4);lastGold=G.gold;goldEMA=goldEMA*0.96+Math.max(0,inst)*0.04;G.goldEMA=goldEMA;
   $("#goldRate").textContent="+"+fmt(goldEMA)+" / sec";
   refreshAfford();
+  questT-=dt;if(questT<=0){questT=0.4;const qt=document.querySelector('.tab[data-tab="quest"]');if(qt&&qt.classList.contains("on"))buildQuests();}
   if(toastT>0){toastT-=dt;if(toastT<=0)$("#toast").classList.remove("show");}
 }
 
@@ -812,6 +847,18 @@ function buildForge(){
   for(const u of META_ABIL)p.appendChild(rowEl(u,G.m[u.id],false));
 }
 function buildSoulPane(){const p=$("#soulPane");p.querySelectorAll(".up").forEach(x=>x.remove());for(const u of SOULUP)p.appendChild(rowEl(u,G.s[u.id],true));}
+function buildQuests(){const p=$("#questPane");if(!p)return;p.innerHTML="";
+  const note=document.createElement("div");note.className="note";note.textContent="Deeds completed across all your runs. Finish them to unlock new champions and earn souls.";p.appendChild(note);
+  for(const q of MISSIONS){
+    const done=!!G.missions[q.id],cur=Math.min(q.cur(G),q.max),pct=Math.round(cur/q.max*100);
+    const cT=q.fmt==="time"?fmtTime(cur):fmt(cur),mT=q.fmt==="time"?fmtTime(q.max):fmt(q.max);
+    const row=document.createElement("div");row.className="quest"+(done?" done":"");
+    row.innerHTML='<div class="qhead"><span class="qnm">'+q.nm+'</span><span class="qrew">'+(done?"✓ "+q.rewTxt:q.rewTxt)+'</span></div>'
+      +'<div class="qds">'+q.ds+'</div>'
+      +'<div class="qbar"><div class="qfill" style="width:'+pct+'%"></div><span class="qprog">'+(done?"COMPLETE":cT+" / "+mT)+'</span></div>';
+    p.appendChild(row);
+  }
+}
 function rowEl(u,lvl,soul){
   const maxed=u.max&&lvl>=u.max,locked=u.abil&&lvl===0;
   const btn=document.createElement("button");
@@ -828,7 +875,7 @@ function refreshAfford(){
   document.querySelectorAll("#forgePane .up").forEach(btn=>{const u=META.find(x=>x.id===btn.dataset.id);const lvl=G.m[u.id];const maxed=u.max&&lvl>=u.max;const can=!maxed&&G.gold>=costOf(u,lvl);btn.disabled=maxed||!can;btn.classList.toggle("afford",can);});
   document.querySelectorAll("#soulPane .up").forEach(btn=>{const u=SOULUP.find(x=>x.id===btn.dataset.id);const lvl=G.s[u.id];const maxed=u.max&&lvl>=u.max;const can=!maxed&&G.soul>=costOf(u,lvl);btn.disabled=maxed||!can;btn.classList.toggle("afford",can);});
 }
-document.querySelectorAll(".tab").forEach(tb=>tb.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));tb.classList.add("on");const soul=tb.dataset.tab==="soul";$("#forgePane").style.display=soul?"none":"block";$("#soulPane").style.display=soul?"block":"none";});
+document.querySelectorAll(".tab").forEach(tb=>tb.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));tb.classList.add("on");const t=tb.dataset.tab;$("#forgePane").style.display=t==="forge"?"block":"none";$("#soulPane").style.display=t==="soul"?"block":"none";$("#questPane").style.display=t==="quest"?"block":"none";if(t==="quest")buildQuests();});
 $("#dNow").onclick=()=>{deathTimer=0;};
 
 document.addEventListener("visibilitychange",()=>{if(document.hidden){hidden=true;hiddenAt=Date.now();}else if(hidden){hidden=false;const sec=(Date.now()-hiddenAt)/1000;if(sec>3)grantAway(sec);}});
@@ -893,7 +940,7 @@ const modal=$("#modal");
 function openModal(title,text,action){$("#modalTitle").textContent=title;$("#modalText").value=text;$("#modalAction").textContent=action;modal.style.display="flex";}
 $("#modalClose").onclick=()=>modal.style.display="none";
 $("#saveBtn").onclick=()=>{G.lastActive=Date.now();const code=btoa(unescape(encodeURIComponent(JSON.stringify(G))));openModal("Save code — copy & keep it",code,"Copy");$("#modalAction").onclick=()=>{$("#modalText").select();try{document.execCommand("copy");}catch(_){}$("#modalAction").textContent="Copied!";};};
-$("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$("#modalAction").onclick=()=>{try{const o=JSON.parse(decodeURIComponent(escape(atob($("#modalText").value.trim()))));G=Object.assign(fresh(),o);G.m=Object.assign(fresh().m,o.m||{});G.s=Object.assign(fresh().s,o.s||{});G.best=Object.assign(fresh().best,o.best||{});G.unlocks=Object.assign(fresh().unlocks,o.unlocks||{});G.mapUnlocks=Object.assign(fresh().mapUnlocks,o.mapUnlocks||{});checkUnlocks();if(!G.unlocks[G.char])G.char="knight";if(!G.mapUnlocks[G.map])G.map="dungeon";curChar=CHARS.find(c=>c.id===G.char)||CHARS[0];const sec=(Date.now()-(o.lastActive||Date.now()))/1000;modal.style.display="none";buildForge();buildSoulPane();buildCharCards();AUDIO.setEnabled(!G.muted);updateSoundBtn();beginGame(G.char,G.map);if(sec>30)grantAway(sec);}catch(err){$("#modalAction").textContent="Invalid code";}};};
+$("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$("#modalAction").onclick=()=>{try{const o=JSON.parse(decodeURIComponent(escape(atob($("#modalText").value.trim()))));G=Object.assign(fresh(),o);G.m=Object.assign(fresh().m,o.m||{});G.s=Object.assign(fresh().s,o.s||{});G.best=Object.assign(fresh().best,o.best||{});G.unlocks=Object.assign(fresh().unlocks,o.unlocks||{});G.mapUnlocks=Object.assign(fresh().mapUnlocks,o.mapUnlocks||{});G.lt=Object.assign(fresh().lt,o.lt||{});G.missions=Object.assign({},o.missions||{});checkUnlocks();checkMissions();if(!G.unlocks[G.char])G.char="knight";if(!G.mapUnlocks[G.map])G.map="dungeon";curChar=CHARS.find(c=>c.id===G.char)||CHARS[0];const sec=(Date.now()-(o.lastActive||Date.now()))/1000;modal.style.display="none";buildForge();buildSoulPane();buildQuests();buildCharCards();AUDIO.setEnabled(!G.muted);updateSoundBtn();beginGame(G.char,G.map);if(sec>30)grantAway(sec);}catch(err){$("#modalAction").textContent="Invalid code";}};};
 
 let scene='menu',paused=false;
 function hideScreens(){$('#mainMenu').style.display='none';$('#charSelect').style.display='none';$('#realmSelect').style.display='none';$('#pauseMenu').style.display='none';$('#creditsScreen').style.display='none';}
@@ -938,7 +985,7 @@ $('#soundBtn').onclick=function(){AUDIO.start();const on=AUDIO.toggle();G.muted=
 function startAudioOnce(){AUDIO.start();window.removeEventListener('pointerdown',startAudioOnce);window.removeEventListener('keydown',startAudioOnce);}
 window.addEventListener('pointerdown',startAudioOnce);window.addEventListener('keydown',startAudioOnce);
 window.addEventListener('keydown',function(e){const k=(e.key||'').toLowerCase();if(e.key==='Escape'||k==='p'){if(scene==='play')togglePause();else if($('#creditsScreen').style.display==='flex')showMenu();else if($('#realmSelect').style.display==='flex')showSelect();else if(scene==='select')showMenu();}});
-G=fresh();resize();window.addEventListener("resize",resize);checkUnlocks();AUDIO.setEnabled(!G.muted);updateSoundBtn();buildForge();buildSoulPane();buildCharCards();startRun();requestAnimationFrame(loop);showMenu();
+G=fresh();resize();window.addEventListener("resize",resize);checkUnlocks();checkMissions();AUDIO.setEnabled(!G.muted);updateSoundBtn();buildForge();buildSoulPane();buildQuests();buildCharCards();startRun();requestAnimationFrame(loop);showMenu();
 })();
 </script>
 </body>
