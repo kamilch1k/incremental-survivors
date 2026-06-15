@@ -376,7 +376,7 @@ function makeBiomePattern(cfg){
 /* ---- pixel-art props ---- */
 const PAL={'.':null,' ':null,
   K:'#0a0705',w:'#5b3a1e',o:'#3a2412',G:'#6a6258',L:'#8c8478',d:'#46413a',l:'#b3a89a',
-  r:'#b0432f',e:'#4e8d50',u:'#4a78b8',y:'#d4b240',b:'#4a2c14',
+  r:'#b0432f',R:'#e0563f',e:'#4e8d50',u:'#4a78b8',y:'#d4b240',b:'#4a2c14',
   a:'#ffd97a',A:'#ffe9a8',n:'#e0b34a',m:'#b8862f',M:'#5a3f12',
   g:'#3f8a35',h:'#2f6f2a',j:'#1e4a1c',f:'#ffd24a',F:'#ff7a2a',
   W:'#eef2f8',C:'#c8d2e0',c:'#7aa0d0',q:'#a8d0f0',Q:'#ffffff',
@@ -402,12 +402,19 @@ const PROP={
   brazier:{art:bakeArt(["..fFf...",".fFFFf..",".fFFFf..","..fFf...",".IIIIII.","IkkkkkI.",".IkkkI..","..I.I...","..I.I..."]),sc:4,col:14,glow:"rgba(255,140,50,.55)"},
   bones:{art:bakeArt(["..ss..ss..",".sSSssSSs.",".sSSssSSs.","..ssssss..","...ssss..."]),sc:4,col:0},
   spike:{art:bakeArt(["..i..i..",".iI..Ii.",".iI..Ii.","iIIIIIIi","iIIIIIIi",".iIIIIi.","..iIIi.."]),sc:4,col:12},
+  statue:{art:bakeArt(["..LLLL..",".LGGGGL.",".LGGGGL.","..GGGG..",".GGGGGG.",".GGGGGG.","..GGGG..","..GGGG..",".dddddd.","dLLLLLLd","dGGGGGGd","dGGGGGGd","dddddddd"]),sc:4,col:12},
+  rubble:{art:bakeArt(["..d..d..",".dGGdGd.","dGGdGGGd",".dddddd."]),sc:4,col:0},
+  mushroom:{art:bakeArt(["..RRR..",".RRRRR.","RRrRRrR",".RRRRR.","..sss..","..sss..","..sss.."]),sc:4,col:0},
+  stump:{art:bakeArt([".oooooo.","owwwwwwo","owllllwo","owwwwwwo","owwwwwwo",".oooooo."]),sc:4,col:10},
+  orb:{art:bakeArt(["..qqqq..",".qQQQQq.","qQQWWQQq","qQQWWQQq",".qQQQQq.","..qqqq.."]),sc:4,col:0,float:true,glow:"rgba(180,210,255,.6)"},
+  obelisk:{art:bakeArt(["KKKKKK","KppppK","KpkkpK","KpkkpK","KpkVpK","KpkkpK","KpkkpK","KpVkpK","KpkkpK","KpkkpK","KpkkpK","KppppK","KKKKKK"]),sc:4,col:11,glow:"rgba(255,120,40,.4)"},
+  lavapool:{art:bakeArt(["...VVVVV...","..VxxxxxV..",".VxxxxxxxV.","..VxxxxxV..","...VVVVV..."]),sc:4,col:0,glow:"rgba(255,130,40,.6)"},
 };
 const MAPS=[
-  {id:"dungeon",nm:"The Dungeon",ic:"⚔",bl:"Cold stone halls of dripping torchlight and shelves of forgotten lore.",amb:"rgba(78,58,32,.34)",void:"#080604",border:"rgba(240,183,90,.3)",props:["bookshelf","bookshelf","pillar","barrel","torch","pillar","barrel"],density:24},
-  {id:"green",nm:"Greenwood",ic:"❦",bl:"A sunlit glade of mossy stone, old oaks and wildflowers.",amb:"rgba(120,150,60,.30)",void:"#0a1006",border:"rgba(150,210,90,.32)",props:["tree","tree","bush","rock","bush","tree"],density:22},
-  {id:"heaven",nm:"The Heavens",ic:"✚",bl:"Marble of the firmament, gilded columns and drifting cloud.",amb:"rgba(255,240,210,.30)",void:"#1a2433",border:"rgba(255,235,170,.4)",props:["goldpillar","cloud","crystal","goldpillar","cloud"],density:18},
-  {id:"inferno",nm:"The Inferno",ic:"☄",bl:"Cracked ash over molten veins, braziers and the bones of the lost.",amb:"rgba(255,110,40,.30)",void:"#0a0503",border:"rgba(255,120,40,.4)",props:["lavarock","brazier","bones","lavarock","spike","brazier"],density:22},
+  {id:"dungeon",nm:"The Dungeon",ic:"⚔",bl:"Cold stone halls of dripping torchlight and shelves of forgotten lore.",amb:"rgba(78,58,32,.34)",void:"#080604",border:"rgba(240,183,90,.3)",props:["bookshelf","bookshelf","pillar","barrel","torch","pillar","barrel","statue","rubble"],density:26,enemyTint:null,req:()=>true,reqTxt:""},
+  {id:"green",nm:"Greenwood",ic:"❦",bl:"A sunlit glade of mossy stone, old oaks and wildflowers.",amb:"rgba(120,150,60,.30)",void:"#0a1006",border:"rgba(150,210,90,.32)",props:["tree","tree","bush","rock","bush","tree","stump","mushroom"],density:24,enemyTint:"rgba(90,170,80,0.30)",req:g=>g.best.wave>=3,reqTxt:"Reach Wave 3"},
+  {id:"heaven",nm:"The Heavens",ic:"✚",bl:"Marble of the firmament, gilded columns and drifting cloud.",amb:"rgba(255,240,210,.30)",void:"#1a2433",border:"rgba(255,235,170,.4)",props:["goldpillar","cloud","crystal","goldpillar","cloud","statue","orb"],density:20,enemyTint:"rgba(255,235,185,0.33)",req:g=>g.best.kills>=300,reqTxt:"Slay 300 in one run"},
+  {id:"inferno",nm:"The Inferno",ic:"☄",bl:"Cracked ash over molten veins, braziers and the bones of the lost.",amb:"rgba(255,110,40,.30)",void:"#0a0503",border:"rgba(255,120,40,.4)",props:["lavarock","brazier","bones","lavarock","spike","brazier","obelisk","lavapool"],density:24,enemyTint:"rgba(255,95,45,0.36)",req:g=>g.best.wave>=10,reqTxt:"Reach Wave 10"},
 ];
 MAPS.forEach(m=>{m.pat=makeBiomePattern(BIOME_CFG[m.id]);});
 function getMap(id){return MAPS.find(m=>m.id===id)||MAPS[0];}
@@ -430,6 +437,23 @@ function drawProp(p){
   if(def.glow){const cy=fy-dh*0.55,r=dw*0.95;const gg=ctx.createRadialGradient(p.x,cy,1,p.x,cy,r);gg.addColorStop(0,def.glow);gg.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=gg;ctx.beginPath();ctx.arc(p.x,cy,r,0,TAU);ctx.fill();}
   ctx.imageSmoothingEnabled=false;ctx.drawImage(a.cv,Math.round(p.x-dw/2),Math.round(fy-dh),dw,dh);
 }
+/* ---- per-biome enemy tint ---- */
+const tintCache={};
+function tintedFrames(key,tint){
+  const ck=key+"|"+tint;if(tintCache[ck])return tintCache[ck];
+  const sp=SPRITES[key],ims=IMG[key];if(!sp)return null;
+  for(const im of ims){if(!im.complete||!im.naturalWidth)return null;}
+  const out=ims.map(function(im){const cv=document.createElement("canvas");cv.width=sp.w;cv.height=sp.h;const x=cv.getContext("2d");x.imageSmoothingEnabled=false;x.drawImage(im,0,0,sp.w,sp.h);x.globalCompositeOperation="source-atop";x.fillStyle=tint;x.fillRect(0,0,sp.w,sp.h);return cv;});
+  tintCache[ck]=out;return out;
+}
+function drawSpriteTinted(key,x,y,targetH,flip,frame,tint){
+  if(!tint)return drawSpriteH(key,x,y,targetH,flip,frame);
+  const sp=SPRITES[key];if(!sp)return false;const im=IMG[key][frame%IMG[key].length];
+  if(!im||!im.complete||!im.naturalWidth)return false;
+  const frames=tintedFrames(key,tint);if(!frames)return drawSpriteH(key,x,y,targetH,flip,frame);
+  const cv=frames[frame%frames.length],sc=targetH/sp.h,w=sp.w*sc,h=targetH;
+  ctx.save();ctx.translate(x,y);if(flip)ctx.scale(-1,1);ctx.imageSmoothingEnabled=false;ctx.drawImage(cv,-w/2,-h/2,w,h);ctx.restore();return true;
+}
 const motes=[];for(let i=0;i<48;i++)motes.push({x:Math.random(),y:Math.random(),s:rand(0.5,1.8),vy:rand(0.0008,0.004),vx:rand(-0.0025,0.0025),a:rand(0.05,0.2),ph:rand(0,TAU)});
 function drawMotes(){for(const m of motes){m.y-=m.vy;m.x+=m.vx+Math.sin(t*0.5+m.ph)*0.0003;if(m.y<-0.03){m.y=1.03;m.x=Math.random();}if(m.x<-0.03)m.x=1.03;if(m.x>1.03)m.x=-0.03;const a=m.a*(0.55+0.45*Math.sin(t*1.2+m.ph));ctx.fillStyle="rgba(255,222,160,"+a.toFixed(3)+")";ctx.fillRect(m.x*W,m.y*Hh,m.s,m.s);}}
 
@@ -443,6 +467,7 @@ function fresh(){return{
   s:{epow:0,efort:0,head:0,smag:0},
   best:{wave:1,time:0,kills:0},
   unlocks:{knight:true,ranger:false,templar:false,warlock:false},
+  mapUnlocks:{dungeon:true,green:false,heaven:false,inferno:false},
   muted:false,map:"dungeon",
   lastActive:Date.now(),goldEMA:0
 };}
@@ -479,7 +504,10 @@ const CHARS=[
   {id:"templar",ic:"✚",nm:"Templar",bl:"Holy fire and steadfast faith. Burns the dark and mends his own wounds.",tags:["Holy Nova","Regen","Sturdy"],mods:{nova:1.55,magic:1.18,hp:1.15,regenAdd:2.5},req:g=>g.best.time>=180,reqTxt:"Survive 3 minutes"},
   {id:"warlock",ic:"☄",nm:"Warlock",bl:"Commander of dark arts. Frail of body, but his spells swell without end.",tags:["+45% Magic","Greedy","Glass"],mods:{magic:1.45,dmg:1.05,gold:1.25,hp:0.82,orb:0.9},req:g=>g.best.kills>=600,reqTxt:"Slay 600 in one run"},
 ];
-function checkUnlocks(){const nu=[];for(const ch of CHARS){if(!G.unlocks[ch.id]&&ch.req&&ch.req(G)){G.unlocks[ch.id]=true;nu.push(ch);}}return nu;}
+function checkUnlocks(){const nu=[];
+  for(const ch of CHARS){if(!G.unlocks[ch.id]&&ch.req&&ch.req(G)){G.unlocks[ch.id]=true;nu.push({nm:ch.nm});}}
+  if(typeof MAPS!=="undefined"&&G.mapUnlocks){for(const m of MAPS){if(!G.mapUnlocks[m.id]&&m.req&&m.req(G)){G.mapUnlocks[m.id]=true;nu.push({nm:m.nm});}}}
+  return nu;}
 let curChar=CHARS[0];
 function cm(k){const m=curChar.mods;return m[k]!==undefined?m[k]:(k==="regenAdd"?0:1);}
 const M=()=>G.m,S=()=>G.s;
@@ -519,6 +547,7 @@ function newBeacon(awayFrom){
 function startRun(charId,mapId){
   if(charId){curChar=CHARS.find(c=>c.id===charId)||curChar;G.char=curChar.id;}
   if(mapId)curMap=getMap(mapId);else if(!curMap)curMap=getMap(G.map);
+  if(G.mapUnlocks&&!G.mapUnlocks[curMap.id])curMap=getMap("dungeon");
   G.map=curMap.id;groundPat=curMap.pat;
   const sub=document.querySelector('.title-badge .sub');if(sub)sub.textContent=curMap.nm;
   run={alive:true,time:0,kills:0,wave:1,level:startLevel(),xp:0,xpNeed:8,
@@ -688,7 +717,7 @@ function endRun(){
   const souls=Math.floor((run.time/20+run.kills/110)*soulBonus());run._souls=Math.max(souls,0);G.soul+=run._souls;
   if(run.wave>G.best.wave)G.best.wave=run.wave;if(run.time>G.best.time)G.best.time=run.time;if(run.kills>G.best.kills)G.best.kills=run.kills;
   const newChars=checkUnlocks();
-  const du=$("#dUnlock");if(newChars.length){du.style.display="block";du.textContent="✦ New champion"+(newChars.length>1?"s":"")+" unlocked: "+newChars.map(c=>c.nm).join(", ");}else du.style.display="none";
+  const du=$("#dUnlock");if(newChars.length){du.style.display="block";du.textContent="✦ Unlocked: "+newChars.map(c=>c.nm).join(", ");}else du.style.display="none";
   spawnParts(hero.x,hero.y,40,"#c78bff");
   $("#dWave").textContent=run.wave;$("#dTime").textContent=fmtTime(run.time);$("#dKills").textContent=run.kills;
   $("#dSouls").textContent="+"+run._souls+" soul"+(run._souls===1?"":"s")+" minted";
@@ -725,7 +754,7 @@ function render(){
   for(const g of gems){if(!drawSpriteH("coin",g.x,g.y,15,false,Math.floor(t*10+g.x*0.3)%4)){ctx.fillStyle="#9ad06a";ctx.fillRect(g.x-2,g.y-2,4,4);}}
   for(const e of enemies){const eh=e.brute?46:30;
     ctx.save();ctx.globalAlpha=.3;ctx.fillStyle="#000";ctx.beginPath();ctx.ellipse(e.x,e.y+(e.brute?16:10),e.brute?13:8,4,0,0,TAU);ctx.fill();ctx.restore();
-    if(!drawSpriteH(e.spr,e.x,e.y-(e.brute?6:4),eh,!!(hero&&hero.x<e.x),Math.floor(t*5+e.fl)%2)){ctx.save();ctx.translate(e.x,e.y);const rr=e.r;ctx.fillStyle=`hsla(${e.hue},65%,55%,.92)`;ctx.beginPath();ctx.moveTo(0,-rr);ctx.lineTo(rr,0);ctx.lineTo(0,rr);ctx.lineTo(-rr,0);ctx.closePath();ctx.fill();ctx.restore();}
+    if(!drawSpriteTinted(e.spr,e.x,e.y-(e.brute?6:4),eh,!!(hero&&hero.x<e.x),Math.floor(t*5+e.fl)%2,(curMap&&curMap.enemyTint)||null)){ctx.save();ctx.translate(e.x,e.y);const rr=e.r;ctx.fillStyle=`hsla(${e.hue},65%,55%,.92)`;ctx.beginPath();ctx.moveTo(0,-rr);ctx.lineTo(rr,0);ctx.lineTo(0,rr);ctx.lineTo(-rr,0);ctx.closePath();ctx.fill();ctx.restore();}
     if(e.hp<e.max*0.98){const bw=e.brute?28:18;ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(e.x-bw/2,e.y-eh*0.72,bw,3);ctx.fillStyle="#ff8fa3";ctx.fillRect(e.x-bw/2,e.y-eh*0.72,bw*(e.hp/e.max),3);}
   }
   for(const L of lightning){ctx.strokeStyle=`rgba(190,232,255,${clamp(L.life/0.16,0,1)})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(L.ax,L.ay);const mx=(L.ax+L.bx)/2+rand(-10,10),my=(L.ay+L.by)/2+rand(-10,10);ctx.lineTo(mx,my);ctx.lineTo(L.bx,L.by);ctx.stroke();}
@@ -864,22 +893,25 @@ const modal=$("#modal");
 function openModal(title,text,action){$("#modalTitle").textContent=title;$("#modalText").value=text;$("#modalAction").textContent=action;modal.style.display="flex";}
 $("#modalClose").onclick=()=>modal.style.display="none";
 $("#saveBtn").onclick=()=>{G.lastActive=Date.now();const code=btoa(unescape(encodeURIComponent(JSON.stringify(G))));openModal("Save code — copy & keep it",code,"Copy");$("#modalAction").onclick=()=>{$("#modalText").select();try{document.execCommand("copy");}catch(_){}$("#modalAction").textContent="Copied!";};};
-$("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$("#modalAction").onclick=()=>{try{const o=JSON.parse(decodeURIComponent(escape(atob($("#modalText").value.trim()))));G=Object.assign(fresh(),o);G.m=Object.assign(fresh().m,o.m||{});G.s=Object.assign(fresh().s,o.s||{});G.best=Object.assign(fresh().best,o.best||{});G.unlocks=Object.assign(fresh().unlocks,o.unlocks||{});checkUnlocks();if(!G.unlocks[G.char])G.char="knight";curChar=CHARS.find(c=>c.id===G.char)||CHARS[0];const sec=(Date.now()-(o.lastActive||Date.now()))/1000;modal.style.display="none";buildForge();buildSoulPane();buildCharCards();AUDIO.setEnabled(!G.muted);updateSoundBtn();beginGame(G.char,G.map);if(sec>30)grantAway(sec);}catch(err){$("#modalAction").textContent="Invalid code";}};};
+$("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$("#modalAction").onclick=()=>{try{const o=JSON.parse(decodeURIComponent(escape(atob($("#modalText").value.trim()))));G=Object.assign(fresh(),o);G.m=Object.assign(fresh().m,o.m||{});G.s=Object.assign(fresh().s,o.s||{});G.best=Object.assign(fresh().best,o.best||{});G.unlocks=Object.assign(fresh().unlocks,o.unlocks||{});G.mapUnlocks=Object.assign(fresh().mapUnlocks,o.mapUnlocks||{});checkUnlocks();if(!G.unlocks[G.char])G.char="knight";if(!G.mapUnlocks[G.map])G.map="dungeon";curChar=CHARS.find(c=>c.id===G.char)||CHARS[0];const sec=(Date.now()-(o.lastActive||Date.now()))/1000;modal.style.display="none";buildForge();buildSoulPane();buildCharCards();AUDIO.setEnabled(!G.muted);updateSoundBtn();beginGame(G.char,G.map);if(sec>30)grantAway(sec);}catch(err){$("#modalAction").textContent="Invalid code";}};};
 
 let scene='menu',paused=false;
 function hideScreens(){$('#mainMenu').style.display='none';$('#charSelect').style.display='none';$('#realmSelect').style.display='none';$('#pauseMenu').style.display='none';$('#creditsScreen').style.display='none';}
 function setPanels(on){$('#side').style.display=on?'flex':'none';$('#hud').style.display=on?'flex':'none';$('#bars').style.display=on?'block':'none';$('#pauseBtn').style.display=on?'flex':'none';$('#cornerBtns').style.display=on?'none':'flex';const tb=document.querySelector('.title-badge');if(tb)tb.style.display=on?'block':'none';}
 function showCredits(){hideScreens();$('#death').style.display='none';$('#cornerBtns').style.display='none';$('#creditsScreen').style.display='flex';}
 function updateSoundBtn(){const b=$('#soundBtn');if(!b)return;b.innerHTML=AUDIO.isOn()?'&#9834;':'&#9651;';b.classList.toggle('off',!AUDIO.isOn());}
-function showMenu(){scene='menu';paused=false;hideScreens();$('#death').style.display='none';setPanels(false);const nch=Object.values(G.unlocks).filter(Boolean).length;$('#mFoot').textContent='Souls reaped: '+G.soul+'  ·  Champions '+nch+'/'+CHARS.length;$('#mainMenu').style.display='flex';}
+function showMenu(){scene='menu';paused=false;hideScreens();$('#death').style.display='none';setPanels(false);const nch=Object.values(G.unlocks).filter(Boolean).length,nmp=Object.values(G.mapUnlocks||{}).filter(Boolean).length;$('#mFoot').textContent='Souls '+G.soul+'  ·  Champions '+nch+'/'+CHARS.length+'  ·  Realms '+nmp+'/'+MAPS.length;$('#mainMenu').style.display='flex';}
 function showSelect(){scene='select';hideScreens();buildCharCards();$('#charSelect').style.display='flex';}
 function beginGame(id,mapId){hideScreens();$('#death').style.display='none';scene='play';paused=false;setPanels(true);startRun(id,mapId);}
 let pendingChar="knight";
 function showRealms(charId){pendingChar=charId||pendingChar;scene='select';hideScreens();buildRealmCards();$('#realmSelect').style.display='flex';}
 function buildRealmCards(){const c=$('#realmCards');c.innerHTML='';for(const m of MAPS){
-  const el=document.createElement('div');el.className='card';
-  el.innerHTML='<div class="ch"><div class="cic" style="font-size:22px">'+m.ic+'</div><div class="cnm">'+m.nm+'</div></div><div class="cbl">'+m.bl+'</div>';
-  el.onclick=function(){beginGame(pendingChar,m.id);};
+  const un=!!(G.mapUnlocks&&G.mapUnlocks[m.id]);
+  const el=document.createElement('div');el.className='card'+(un?'':' locked');
+  const body=un?'':'<div class="lockrow"><span class="lk">&#128274; Locked</span><span class="rq">'+m.reqTxt+'</span></div>';
+  el.innerHTML='<div class="ch"><div class="cic" style="font-size:22px">'+m.ic+'</div><div class="cnm">'+m.nm+'</div></div><div class="cbl">'+m.bl+'</div>'+body;
+  if(un){el.onclick=function(){beginGame(pendingChar,m.id);};}
+  else{el.onclick=function(){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');toast('REALM LOCKED',m.reqTxt);};}
   c.appendChild(el);}}
 function togglePause(){if(scene!=='play')return;paused=!paused;$('#pauseMenu').style.display=paused?'flex':'none';}
 function buildCharCards(){const c=$('#charCards');c.innerHTML='';for(const ch of CHARS){
