@@ -433,9 +433,19 @@
   #modal textarea{color:#000 !important;}#modal button.go{background:#c0c0c0 !important;color:#000 !important;}
   .casBox{background:#c0c0c0 !important;}
   .casTtl{color:#000 !important;font-weight:bold !important;font-size:11px !important;}
-  .casWin{background:#ffffff !important;}
-  .casMark{border:2px solid #000080 !important;box-shadow:none !important;}
+  .casWin{background:#0c1730 !important;}
+  .casReel .cell{background:transparent !important;}
+  .casMark{border:2px solid #ffd24a !important;box-shadow:none !important;}
   .casRes{color:#000 !important;font-weight:bold !important;}
+  /* character-select sprites: contained + uniform in their box */
+  .card .cic{width:48px !important;height:48px !important;overflow:hidden !important;display:grid !important;place-items:center !important;}
+  .card .cic img{width:40px !important;height:40px !important;object-fit:contain !important;image-rendering:pixelated !important;}
+  /* keep the upgrade panel docked on the right at every screen size (never stack/cover) */
+  @media (max-width:860px){
+    #app{flex-direction:row !important;}
+    #side{width:200px !important;flex:0 0 200px !important;height:100vh !important;border-left:2px solid #0a0a0a !important;border-top:none !important;}
+    #stage{flex:1 1 auto !important;min-height:0 !important;}
+  }
 </style>
 </head>
 <body>
@@ -861,8 +871,17 @@ const CICON={
   knife:bakeArt(["..Z........Z..","..Zz......zZ..","...Zz....zZ...","....Zz..zZ....",".....BzzB.....",".....zBBz.....","....oz..zo....","...o......o...","..o........o.."]),
   water:bakeArt([".....qq.....","....qWWq....","....qWWq....","...UqqqqU...","..UUUUUUUU..",".UUqQQQqUU..",".UUqQQQqUU..",".UUUUUUUUU..","..UUUUUUU...","...UUUUU...."]),
   storm:bakeArt(["...WWWWWW...","..WWWWWWWW..",".CCCCCCCCCC.","....YY......","...YaA......","..YaA.......","..aA........",".YaAA.......","...aa......."]),
+  spike:bakeArt([".....NN.....","....NIIN....","....NIIN....","...NIIIIN...","...NIDDIN...","..NIDDDDIN..","..NDDDDDDN..",".NDDDDDDDDN.",".dddddddddd."]),
+  pigeon:bakeArt(["..B......B..","..Bz.WW.zB..","...zWWWWz...","..zWWWWWWy..","..zWWWWk....","...zzzz....."]),
+  boom:bakeArt(["....aaa....","....aAa....","....aAa....",".aaaAAAaaa.",".aAAAAAAAa.",".aaaAAAaaa.","....aAa....","....aAa....","....aaa...."]),
 };
-const ICONURL={axe:CICON.axe.cv.toDataURL(),knife:CICON.knife.cv.toDataURL(),water:CICON.water.cv.toDataURL(),storm:CICON.storm.cv.toDataURL()};
+const ABIL_SPR={
+  spike:bakeArt(["...NN...","..NIIN..","..NIIN..",".NIIIIN.",".NIDDIN.","NIDDDDIN","NDDDDDDN",".dddddd."]),
+  bird0:bakeArt(["..B......B..","..Bz.WW.zB..","...zWWWWz...","...WWWWWWy..","...zWWWk....","....zzz....."]),
+  bird1:bakeArt(["............","...B.WW.B...","..BzWWWWzB..","...WWWWWWy..","...zWWWk....","..B.zzz.B..."]),
+  cross:bakeArt(["...aaa...","...aAa...","...aAa...","aaaAAAaaa","aAAAAAAAa","aaaAAAaaa","...aAa...","...aAa...","...aaa..."]),
+};
+const ICONURL={axe:CICON.axe.cv.toDataURL(),knife:CICON.knife.cv.toDataURL(),water:CICON.water.cv.toDataURL(),storm:CICON.storm.cv.toDataURL(),spike:CICON.spike.cv.toDataURL(),pigeon:CICON.pigeon.cv.toDataURL(),boom:CICON.boom.cv.toDataURL()};
 /* ---- small baked enemies (slime, bat) — detailed + rendered small so pixels match ---- */
 function regBaked(key,fr){SPRITES[key]={w:fr[0].w,h:fr[0].h};IMG[key]=fr.map(f=>f.cv);}
 regBaked("slime",[
@@ -966,7 +985,7 @@ function startLevel(){return 1+S().head*2;}
 function offlineCapH(){return 4+S().smag*2;}
 function soulBonus(){return 1+S().smag*0.15;}
 
-let run,hero,enemies=[],gems=[],bolts=[],wisps=[],novas=[],lightning=[],parts=[],pops=[],beacons=[],axes=[],knives=[],pools=[],strikes=[];
+let run,hero,enemies=[],gems=[],bolts=[],wisps=[],novas=[],lightning=[],parts=[],pops=[],beacons=[],axes=[],knives=[],pools=[],strikes=[],caltrops=[],birds=[],booms=[];
 let orbAngle=0;
 const BTYPES={
   cache:{ic:"◇",col:"#f0c04a",name:"Treasure Hoard"},
@@ -998,15 +1017,15 @@ function startRun(charId,mapId){
   skyClouds=curMap.sky?Array.from({length:14},()=>({bx:rand(0,WORLD.w),y:rand(0,WORLD.h),sc:rand(4,9),spd:rand(6,24),al:rand(.6,1)})):null;
   const sub=document.querySelector('.title-badge .sub');if(sub)sub.textContent=curMap.nm;
   run={alive:true,time:0,kills:0,wave:1,level:startLevel(),xp:0,xpNeed:8,
-       spawnAcc:0,fireAcc:0,novaAcc:0,chainAcc:0,wispAcc:0,axeAcc:0,knifeAcc:0,waterAcc:0,stormAcc:0,autoAcc:0,nextCasinoLevel:3,
+       spawnAcc:0,fireAcc:0,novaAcc:0,chainAcc:0,wispAcc:0,axeAcc:0,knifeAcc:0,waterAcc:0,stormAcc:0,spikeAcc:0,boomAcc:0,pigeonCoo:0,autoAcc:0,nextCasinoLevel:3,
        dmgBuff:1,buffTimer:0,target:null,bossRef:null,nextBossWave:5,
-       b:{orbDps:1,boltDmg:1,fire:1,nova:1,extraOrb:0,chain:1,aura:1,wisp:1,axe:0,knife:0,water:0,storm:0}};
+       b:{orbDps:1,boltDmg:1,fire:1,nova:1,extraOrb:0,chain:1,aura:1,wisp:1,axe:0,knife:0,water:0,storm:0,spike:0,pigeon:0,boom:0}};
   for(let i=1;i<startLevel();i++)applyLevelGain(true);
   hero={x:WORLD.w/2,y:WORLD.h/2,hp:maxHpV(),max:maxHpV(),vx:0,vy:0,hurt:0};
   cam.x=hero.x-W/2;cam.y=hero.y-Hh/2;
   genObstacles();
   enemies.length=gems.length=bolts.length=wisps.length=novas.length=lightning.length=parts.length=pops.length=0;
-  axes.length=knives.length=pools.length=strikes.length=0;
+  axes.length=knives.length=pools.length=strikes.length=caltrops.length=birds.length=booms.length=0;
   if(casino){casino.active=false;const ce=$("#casino");if(ce)ce.classList.remove("show");}
   beacons=[];for(let i=0;i<5;i++)beacons.push(newBeacon(hero));
   G.runs++;$("#death").style.display="none";
@@ -1029,7 +1048,7 @@ function wispInt(){return 2.2/hasteMult();}
 function wispCount(){return M().wisp;}
 function wispDmg(){return 20*dmgMult()*run.b.wisp*cm("magic");}
 
-const NEWWEAPONS=[{id:"axe",nm:"Throwing Axe"},{id:"knife",nm:"Spectral Knives"},{id:"water",nm:"Holy Water"},{id:"storm",nm:"Storm Calling"}];
+const NEWWEAPONS=[{id:"axe",nm:"Throwing Axe"},{id:"knife",nm:"Spectral Knives"},{id:"water",nm:"Holy Water"},{id:"storm",nm:"Storm Calling"},{id:"spike",nm:"Spike Field"},{id:"pigeon",nm:"War Pigeons"},{id:"boom",nm:"Cross Boomerang"}];
 function applyLevelGain(silent){
   const pool=[
     {w:24,f:()=>run.b.orbDps*=1.16,t:"Orbital sharpened"},
@@ -1046,6 +1065,9 @@ function applyLevelGain(silent){
   if(run.b.knife>0)pool.push({w:13,f:()=>{run.b.knife++;},t:"More knives"});
   if(run.b.water>0)pool.push({w:12,f:()=>{run.b.water++;},t:"Holy water spreads"});
   if(run.b.storm>0)pool.push({w:12,f:()=>{run.b.storm++;},t:"The storm grows"});
+  if(run.b.spike>0)pool.push({w:12,f:()=>{run.b.spike++;},t:"More spikes erupt"});
+  if(run.b.pigeon>0)pool.push({w:12,f:()=>{run.b.pigeon++;},t:"+1 war pigeon"});
+  if(run.b.boom>0)pool.push({w:12,f:()=>{run.b.boom++;},t:"More boomerangs"});
   let tot=pool.reduce((a,p)=>a+p.w,0),r=Math.random()*tot,pick=pool[0];
   for(const p of pool){if((r-=p.w)<=0){pick=p;break;}}
   pick.f();
@@ -1170,6 +1192,14 @@ function update(dt){
   if(run.b.knife>0){run.knifeAcc+=dt;if(run.knifeAcc>=0.9/hasteMult()){run.knifeAcc=0;const n=2+run.b.knife,base=18*dmgMult()*(1+(run.b.knife-1)*0.18)*cm("bolt");let aim=(hero.vx||hero.vy)?Math.atan2(hero.vy,hero.vx):rand(0,TAU);for(let k=0;k<n;k++){const a=aim+(k-(n-1)/2)*0.17;knives.push({x:hero.x,y:hero.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,dmg:base,life:1.0,pierce:1});}}}
   if(run.b.water>0){run.waterAcc+=dt;if(run.waterAcc>=3.0/hasteMult()){run.waterAcc=0;const n=1+Math.floor(run.b.water/2),base=10*dmgMult()*(1+(run.b.water-1)*0.18)*cm("magic");for(let k=0;k<n;k++)pools.push({x:hero.x+rand(-170,170),y:hero.y+rand(-130,130),r:46+run.b.water*4,life:3.2,dps:base});}}
   if(run.b.storm>0){run.stormAcc+=dt;if(run.stormAcc>=2.6/hasteMult()&&enemies.length){run.stormAcc=0;const n=1+run.b.storm,base=42*dmgMult()*(1+(run.b.storm-1)*0.18)*cm("magic");for(let s=0;s<n;s++){const e=enemies[(Math.random()*enemies.length)|0];if(!e)continue;strikes.push({x:e.x,y:e.y,life:0.32});for(let i=enemies.length-1;i>=0;i--){const o=enemies[i];if(dist(o,e)<48){o.hp-=base;if(o.hp<=0)killEnemy(o,i);}}spawnParts(e.x,e.y,5,"#bfe9ff");}}}
+  if(run.b.spike>0){run.spikeAcc+=dt;if(run.spikeAcc>=2.8/hasteMult()){run.spikeAcc=0;const n=3+run.b.spike,base=26*dmgMult()*(1+(run.b.spike-1)*0.2)*cm("magic");AUDIO.sfx("spike");for(let k=0;k<n;k++){const a=k/n*TAU+rand(-0.25,0.25),d=64+rand(0,56),sx=hero.x+Math.cos(a)*d,sy=hero.y+Math.sin(a)*d;caltrops.push({x:sx,y:sy,life:0.5});for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(dist(e,{x:sx,y:sy})<34){e.hp-=base;if(e.hp<=0)killEnemy(e,i);}}spawnParts(sx,sy,3,"#cfd6e0");}}}
+  if(run.b.boom>0){run.boomAcc+=dt;if(run.boomAcc>=1.7/hasteMult()&&enemies.length){run.boomAcc=0;const n=1+Math.floor(run.b.boom/2),base=24*dmgMult()*(1+(run.b.boom-1)*0.18)*cm("magic");AUDIO.sfx("boom");for(let k=0;k<n;k++){let best=null,bd=1e9;for(const e of enemies){const d=dist(e,hero);if(d<bd){bd=d;best=e;}}const a=(best?Math.atan2(best.y-hero.y,best.x-hero.x):rand(0,TAU))+k*0.5;booms.push({x:hero.x,y:hero.y,vx:Math.cos(a)*360,vy:Math.sin(a)*360,t:0,spin:0,dmg:base,hit:new Set()});}}}
+  if(run.b.pigeon>0){const want=1+run.b.pigeon;while(birds.length<want)birds.push({ang:rand(0,TAU),fl:(Math.random()*9)|0,x:hero.x,y:hero.y});while(birds.length>want)birds.pop();
+    run.pigeonCoo+=dt;if(run.pigeonCoo>2.8){run.pigeonCoo=0;AUDIO.sfx("pigeon");}
+    const br=116+M().spin*2,bsp=1.7,bdps=24*dmgMult()*(1+(run.b.pigeon-1)*0.15)*cm("magic");
+    for(let bi=0;bi<birds.length;bi++){const b=birds[bi];b.ang+=dt*bsp;b.x=hero.x+Math.cos(b.ang+bi/want*TAU)*br;b.y=hero.y+Math.sin(b.ang+bi/want*TAU)*br-6;
+      for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(Math.abs(e.x-b.x)<e.r+10&&Math.abs(e.y-b.y)<e.r+10){e.hp-=bdps*dt;if(Math.random()<0.08)spawnParts(b.x,b.y,1,"#eef2f8");if(e.hp<=0)killEnemy(e,i);}}}
+  }else if(birds.length)birds.length=0;
   if(chainOn()){run.chainAcc+=dt;if(run.chainAcc>=chainInt()&&enemies.length){run.chainAcc=0;
     let cur=null,bd=1e9;for(const e of enemies){const d=dist(e,hero);if(d<bd&&d<300){bd=d;cur=e;}}
     if(cur){const hitSet=new Set();let from={x:hero.x,y:hero.y};const dmg=chainDmg();
@@ -1194,6 +1224,12 @@ function update(dt){
   for(const pl of pools){pl.life-=dt;for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(dist(e,pl)<pl.r){e.hp-=pl.dps*dt;if(Math.random()<0.04)spawnParts(e.x,e.y,1,"#7ac0ff");if(e.hp<=0)killEnemy(e,i);}}}
   pools=pools.filter(p=>p.life>0);
   for(const st of strikes)st.life-=dt;strikes=strikes.filter(s=>s.life>0);
+  for(const cl of caltrops)cl.life-=dt;caltrops=caltrops.filter(c=>c.life>0);
+  for(const bm2 of booms){bm2.t+=dt;bm2.spin+=dt*16;
+    if(bm2.t<0.55){bm2.vx*=0.95;bm2.vy*=0.95;}else{const a=Math.atan2(hero.y-bm2.y,hero.x-bm2.x);bm2.vx+=Math.cos(a)*1500*dt;bm2.vy+=Math.sin(a)*1500*dt;const s=Math.hypot(bm2.vx,bm2.vy),mx=540;if(s>mx){bm2.vx=bm2.vx/s*mx;bm2.vy=bm2.vy/s*mx;}}
+    bm2.x+=bm2.vx*dt;bm2.y+=bm2.vy*dt;
+    for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(bm2.hit.has(e))continue;if(Math.abs(e.x-bm2.x)<e.r+11&&Math.abs(e.y-bm2.y)<e.r+11){bm2.hit.add(e);e.hp-=bm2.dmg;spawnParts(bm2.x,bm2.y,2,"#ffe9a8");if(e.hp<=0)killEnemy(e,i);}}}
+  booms=booms.filter(b=>b.t<2.6&&!(b.t>0.6&&dist(b,hero)<18));
   for(const nv of novas){nv.r+=(nv.lvl?420:nv.rift?620:520)*dt;for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(nv.hit.has(e))continue;const d=dist(e,nv);if(d<nv.r&&d>nv.r-30){nv.hit.add(e);e.hp-=nv.dmg;spawnParts(e.x,e.y,2,"#9fffd0");if(e.hp<=0)killEnemy(e,i);}}}
   novas=novas.filter(nv=>nv.r<nv.max);
   for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];e.wob+=dt*4;
@@ -1278,6 +1314,9 @@ function render(){
   for(const kn of knives)drawSprR(WSPR.knife,kn.x,kn.y,2.4,Math.atan2(kn.vy,kn.vx)+Math.PI/2,1);
   for(const pl of pools){const al=clamp(pl.life/3.2,0,1),tx=poolTex(),sz=Math.round(pl.r*2);ctx.save();ctx.globalAlpha=al*0.8;ctx.imageSmoothingEnabled=false;ctx.drawImage(tx,Math.round(pl.x-pl.r),Math.round(pl.y-pl.r),sz,sz);ctx.restore();}
   for(const st of strikes){const al=clamp(st.life/0.32,0,1);const sg=ctx.createRadialGradient(st.x,st.y,2,st.x,st.y,42);sg.addColorStop(0,"rgba(190,232,255,"+(al*0.6)+")");sg.addColorStop(1,"rgba(190,232,255,0)");ctx.fillStyle=sg;ctx.beginPath();ctx.arc(st.x,st.y,42,0,TAU);ctx.fill();drawSprR(WSPR.bolt2,st.x,st.y-26,2.6,0,al);}
+  for(const cl of caltrops){const al=clamp(cl.life/0.5,0,1),rise=(1-al)*4;drawSprR(ABIL_SPR.spike,cl.x,cl.y-8+rise,2.4,0,Math.min(1,al*1.6));}
+  for(const bm2 of booms)drawSprR(ABIL_SPR.cross,bm2.x,bm2.y,2.4,bm2.spin,1);
+  for(let bi=0;bi<birds.length;bi++){const b=birds[bi];drawSprR((Math.floor(t*8+b.fl)%2)?ABIL_SPR.bird1:ABIL_SPR.bird0,b.x,b.y,2.2,0,1);}
   if(hero){
     if(auraOn()){const ar=auraR();const ag=ctx.createRadialGradient(hero.x,hero.y,ar*0.4,hero.x,hero.y,ar);ag.addColorStop(0,"rgba(255,140,60,0)");ag.addColorStop(.7,"rgba(255,150,70,.12)");ag.addColorStop(1,"rgba(255,110,40,.28)");ctx.fillStyle=ag;ctx.beginPath();ctx.arc(hero.x,hero.y,ar,0,TAU);ctx.fill();ctx.strokeStyle="rgba(255,150,70,.5)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(hero.x,hero.y,ar,0,TAU);ctx.stroke();}
     drawGlow(hero.x,hero.y,112,run.dmgBuff>1?[255,170,110]:[255,217,138],0.12);
@@ -1425,6 +1464,9 @@ const AUDIO=(function(){
       else if(name==="wave"){voice(mtof(45),t,0.5,"sawtooth",0.2);voice(mtof(52),t,0.5,"triangle",0.16);}
       else if(name==="beacon"){voice(mtof(84),t,0.5,"sine",0.3);voice(mtof(88),t+0.06,0.5,"sine",0.22);voice(mtof(91),t+0.12,0.55,"sine",0.18);}
       else if(name==="death"){voice(mtof(55),t,0.7,"sawtooth",0.3);voice(mtof(43),t+0.12,0.9,"sawtooth",0.28);voice(mtof(36),t+0.28,1.2,"triangle",0.26);}
+      else if(name==="spike"){voice(mtof(40),t,0.12,"sawtooth",0.26);voice(mtof(52),t+0.02,0.09,"square",0.18);}
+      else if(name==="pigeon"){voice(mtof(71),t,0.12,"sine",0.16);voice(mtof(67),t+0.08,0.16,"sine",0.14);}
+      else if(name==="boom"){voice(mtof(60),t,0.18,"triangle",0.2);voice(mtof(67),t+0.05,0.18,"triangle",0.15);}
     }
   };
 })();
