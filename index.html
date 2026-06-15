@@ -125,6 +125,7 @@
   .settingsPanel{width:min(330px,82%);padding:10px 0 0;}
   .settingsTitle{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 7px;text-align:left;}
   .settingsGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .settingsGrid .wide{grid-column:1/-1;}
   .sbtn.toggle.off{color:var(--muted2);background:rgba(0,0,0,.2);border-color:var(--line);}
   #pauseBtn{position:absolute;top:14px;right:14px;z-index:4;display:none;width:34px;height:34px;align-items:center;justify-content:center;font-size:13px;color:var(--ink);background:rgba(31,24,19,.72);border:1px solid var(--line2);border-radius:9px;cursor:pointer;backdrop-filter:blur(6px);}
   #pauseBtn:hover{border-color:var(--lume);color:var(--lume);}
@@ -533,10 +534,11 @@
         <button class="sbtn ghost" id="pMenu">Abandon to Menu</button>
       </div>
       <div class="settingsPanel">
-        <div class="settingsTitle">Audio Settings</div>
+        <div class="settingsTitle">Settings</div>
         <div class="settingsGrid">
           <button class="sbtn toggle" id="pMusic">Music On</button>
           <button class="sbtn toggle" id="pSfx">SFX On</button>
+          <button class="sbtn toggle wide" id="pProgress">Right Panel On</button>
         </div>
       </div>
       <div class="screenFoot">The shop on the right stays open while paused.</div>
@@ -1120,7 +1122,7 @@ function fresh(){return{
   unlocks:{knight:true,ranger:false,templar:false,warlock:false,paladin:false,hunter:false,sorcerer:false,reaper:false},
   missions:{},auto:true,
   mapUnlocks:{dungeon:true,green:false,heaven:false,inferno:false},
-  muted:false,musicMuted:false,sfxMuted:false,map:"dungeon",
+  muted:false,musicMuted:false,sfxMuted:false,hideProgress:false,map:"dungeon",
   lastActive:Date.now(),goldEMA:0
 };}
 
@@ -1327,16 +1329,18 @@ function casinoTick(dt){
 function autoUpgrade(){if(!G.auto)return;let best=null,bs=1e18;for(const u of META){const lvl=G.m[u.id];if(u.max&&lvl>=u.max)continue;const c=costOf(u,lvl);if(c>G.gold)continue;let s=c;if(u.abil&&lvl===0)s=c*0.25;if(s<bs){bs=s;best=u;}}if(best)buy(best,false);}
 function dashCooldown(){return Math.max(2.3,5.1-run.b.dash*0.34)/Math.sqrt(hasteMult());}
 function dashDamage(){return (52+run.b.dash*20)*dmgMult()*cm("magic");}
-function dashVector(dx,dy){
+function dashVector(dx,dy,manual){
+  const dl=Math.hypot(dx,dy);
+  if(manual&&dl>0.1)return {x:dx/dl,y:dy/dl};
   let best=null,bd=1e18;
   for(const e of enemies){const d=dist(e,hero);if(d<bd&&d<330&&lineInRegion(hero.x,hero.y,e.x,e.y,12)){bd=d;best=e;}}
   if(best){const a=Math.atan2(best.y-hero.y,best.x-hero.x);return {x:Math.cos(a),y:Math.sin(a)};}
-  const dl=Math.hypot(dx,dy);if(dl>0.1)return {x:dx/dl,y:dy/dl};
+  if(dl>0.1)return {x:dx/dl,y:dy/dl};
   return {x:1,y:0};
 }
-function startDash(dx,dy){
+function startDash(dx,dy,manual){
   if(!hero||!run||run.b.dash<=0)return;
-  const v=dashVector(dx,dy),spd=620+Math.min(run.b.dash,8)*36;
+  const v=dashVector(dx,dy,manual),spd=620+Math.min(run.b.dash,8)*36;
   hero.dashT=0.22+Math.min(run.b.dash,6)*0.012;hero.dashVx=v.x*spd;hero.dashVy=v.y*spd;hero.dashHit=new Set();
   spawnBurst(hero.x,hero.y,10,["#6ad0ff","#bfe9ff","#ffe9a8"]);popText(hero.x,hero.y-22,"DASH","#6ad0ff",18);AUDIO.sfx("wave");
 }
@@ -1461,6 +1465,22 @@ function activateBeacon(b,i){
 
 let W=0,Hh=0,dpr=1;
 function resize(){const r=$("#stage").getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;Hh=r.height;canvas.width=W*dpr;canvas.height=Hh*dpr;canvas.style.width=W+"px";canvas.style.height=Hh+"px";ctx.setTransform(dpr,0,0,dpr,0,0);}
+const moveKeys={};
+function isTypingTarget(){
+  const el=document.activeElement;
+  return !!el&&(/^(INPUT|TEXTAREA|SELECT)$/).test(el.tagName);
+}
+function manualVector(){
+  if(isTypingTarget())return null;
+  let x=0,y=0;
+  if(moveKeys.a||moveKeys.arrowleft)x--;
+  if(moveKeys.d||moveKeys.arrowright)x++;
+  if(moveKeys.w||moveKeys.arrowup)y--;
+  if(moveKeys.s||moveKeys.arrowdown)y++;
+  const l=Math.hypot(x,y);
+  return l?{x:x/l,y:y/l}:null;
+}
+
 let shake=0,t=0,deathTimer=0,hidden=false,hiddenAt=0,toastT=0;
 function loop(now){const dt=Math.min((now-(loop._l||now))/1000,0.05);loop._l=now;t+=dt;
   if(!paused&&(scene==='play'||scene==='menu'||scene==='select')){ if(run.alive)update(dt); else if(scene==='play'){deathTimer-=dt;updateDeath();} else startRun(); }
@@ -1474,21 +1494,26 @@ function update(dt){
   hero.max=Math.max(hero.max,maxHpV());
   hero.hp=Math.min(hero.max,hero.hp+regenV()*dt);
   hero.hurt=Math.max(0,hero.hurt-dt);
-  if(!run.target||!beacons.includes(run.target))run.target=chooseTargetBeacon();
+  const manual=manualVector();
+  if(!manual&&(!run.target||!beacons.includes(run.target)))run.target=chooseTargetBeacon();
   let dx=0,dy=0;
-  if(run.target){const wp=routeWaypointTo(run.target,14),tx=wp.x-hero.x,ty=wp.y-hero.y,tl=Math.hypot(tx,ty)||1;dx+=tx/tl*1.0;dy+=ty/tl*1.0;}
-  let rx=0,ry=0;
-  for(const e of enemies){const ex=hero.x-e.x,ey=hero.y-e.y,d2=ex*ex+ey*ey;if(d2<19000){const inv=1/Math.max(34,Math.sqrt(d2));rx+=ex*inv*inv*1500;ry+=ey*inv*inv*1500;}}
-  const rl=Math.hypot(rx,ry);if(rl>0){const w=clamp(rl,0,2.2);dx+=rx/rl*w;dy+=ry/rl*w;}
-  let ox=0,oy=0;
-  for(const o of obstacles){if(o.col<=0)continue;const ex=hero.x-o.x,ey=hero.y-o.y,d2=ex*ex+ey*ey,rr=o.col+54;if(d2<rr*rr){const inv=1/Math.max(20,Math.sqrt(d2));ox+=ex*inv*inv*2000;oy+=ey*inv*inv*2000;}}
-  const ol=Math.hypot(ox,oy);if(ol>0){const w=clamp(ol,0,2.0);dx+=ox/ol*w;dy+=oy/ol*w;}
-  const mar=70;
-  if(hero.x<mar)dx+=(mar-hero.x)*0.02;if(hero.x>WORLD.w-mar)dx-=(hero.x-(WORLD.w-mar))*0.02;
-  if(hero.y<mar)dy+=(mar-hero.y)*0.02;if(hero.y>WORLD.h-mar)dy-=(hero.y-(WORLD.h-mar))*0.02;
+  if(manual){
+    dx=manual.x;dy=manual.y;
+  }else{
+    if(run.target){const wp=routeWaypointTo(run.target,14),tx=wp.x-hero.x,ty=wp.y-hero.y,tl=Math.hypot(tx,ty)||1;dx+=tx/tl*1.0;dy+=ty/tl*1.0;}
+    let rx=0,ry=0;
+    for(const e of enemies){const ex=hero.x-e.x,ey=hero.y-e.y,d2=ex*ex+ey*ey;if(d2<19000){const inv=1/Math.max(34,Math.sqrt(d2));rx+=ex*inv*inv*1500;ry+=ey*inv*inv*1500;}}
+    const rl=Math.hypot(rx,ry);if(rl>0){const w=clamp(rl,0,2.2);dx+=rx/rl*w;dy+=ry/rl*w;}
+    let ox=0,oy=0;
+    for(const o of obstacles){if(o.col<=0)continue;const ex=hero.x-o.x,ey=hero.y-o.y,d2=ex*ex+ey*ey,rr=o.col+54;if(d2<rr*rr){const inv=1/Math.max(20,Math.sqrt(d2));ox+=ex*inv*inv*2000;oy+=ey*inv*inv*2000;}}
+    const ol=Math.hypot(ox,oy);if(ol>0){const w=clamp(ol,0,2.0);dx+=ox/ol*w;dy+=oy/ol*w;}
+    const mar=70;
+    if(hero.x<mar)dx+=(mar-hero.x)*0.02;if(hero.x>WORLD.w-mar)dx-=(hero.x-(WORLD.w-mar))*0.02;
+    if(hero.y<mar)dy+=(mar-hero.y)*0.02;if(hero.y>WORLD.h-mar)dy-=(hero.y-(WORLD.h-mar))*0.02;
+  }
   const dl=Math.hypot(dx,dy)||1,sp=moveSpeed();
   if(run.b.longdash>0&&hero.longT<=0&&hero.dashT<=0){run.longDashAcc+=dt;if(run.longDashAcc>=longDashCooldown()){run.longDashAcc=0;startLongDash(dx,dy);}}
-  if(run.b.dash>0&&hero.dashT<=0&&hero.longT<=0){run.dashAcc+=dt;if(run.dashAcc>=dashCooldown()&&enemies.some(e=>dist(e,hero)<340)){run.dashAcc=0;startDash(dx,dy);}}
+  if(run.b.dash>0&&hero.dashT<=0&&hero.longT<=0){run.dashAcc+=dt;if(run.dashAcc>=dashCooldown()&&enemies.some(e=>dist(e,hero)<340)){run.dashAcc=0;startDash(dx,dy,!!manual);}}
   if(hero.longT>0){
     hero.longT-=dt;hero.vx=hero.longVx;hero.vy=hero.longVy;if(!moveEntity(hero,hero.longVx*dt,hero.longVy*dt,14,true))hero.longT=0;if(Math.random()<0.9)spawnParts(hero.x-rand(-5,5),hero.y-rand(-5,5),2,"#bfe9ff");if(hero.longT<=0){hero.vx*=0.28;hero.vy*=0.28;}
   }else if(hero.dashT>0){
@@ -1878,14 +1903,14 @@ $("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$
 
 let scene='menu',paused=false,screenshotMode=false;
 function hideScreens(){$('#mainMenu').style.display='none';$('#charSelect').style.display='none';$('#realmSelect').style.display='none';$('#pauseMenu').style.display='none';$('#creditsScreen').style.display='none';}
-function setPanels(on){$('#side').style.display=on?'flex':'none';$('#hud').style.display=on?'flex':'none';$('#bars').style.display=on?'block':'none';$('#pauseBtn').style.display=on?'flex':'none';$('#cornerBtns').style.display=on?'none':'flex';const tb=document.querySelector('.title-badge');if(tb)tb.style.display=on?'block':'none';resize();}
+function setPanels(on){$('#side').style.display=(on&&!G.hideProgress)?'flex':'none';$('#hud').style.display=on?'flex':'none';$('#bars').style.display=on?'block':'none';$('#pauseBtn').style.display=on?'flex':'none';$('#cornerBtns').style.display=on?'none':'flex';const tb=document.querySelector('.title-badge');if(tb)tb.style.display=on?'block':'none';resize();}
 function centerCameraNow(){if(hero){cam.x=hero.x-W/2;cam.y=hero.y-Hh/2;}}
 function enterScreenshotMode(){if(scene!=='play'||!run||!run.alive)return;screenshotMode=true;paused=false;hideScreens();modal.style.display='none';$('#death').style.display='none';$('#app').classList.add('shot');const c=$("#casino");if(c)c.classList.remove("show");resize();centerCameraNow();}
 function exitScreenshotMode(){if(!screenshotMode)return;screenshotMode=false;$('#app').classList.remove('shot');if(scene==='play')setPanels(true);resize();centerCameraNow();}
 function showCredits(){hideScreens();$('#death').style.display='none';$('#cornerBtns').style.display='none';$('#creditsScreen').style.display='flex';}
 function applyAudioSettings(){AUDIO.setEnabled(!G.muted);AUDIO.setMusic(!G.musicMuted);AUDIO.setSfx(!G.sfxMuted);updateSoundBtn();updateAudioSettingsUI();}
 function updateSoundBtn(){const b=$('#soundBtn');if(!b)return;b.innerHTML=AUDIO.isOn()?'&#9834;':'&#9651;';b.classList.toggle('off',!AUDIO.isOn());}
-function updateAudioSettingsUI(){const m=$('#pMusic'),s=$('#pSfx');if(m){m.textContent=G.musicMuted?'Music Off':'Music On';m.classList.toggle('off',!!G.musicMuted);}if(s){s.textContent=G.sfxMuted?'SFX Off':'SFX On';s.classList.toggle('off',!!G.sfxMuted);}}
+function updateAudioSettingsUI(){const m=$('#pMusic'),s=$('#pSfx'),p=$('#pProgress');if(m){m.textContent=G.musicMuted?'Music Off':'Music On';m.classList.toggle('off',!!G.musicMuted);}if(s){s.textContent=G.sfxMuted?'SFX Off':'SFX On';s.classList.toggle('off',!!G.sfxMuted);}if(p){p.textContent=G.hideProgress?'Right Panel Off':'Right Panel On';p.classList.toggle('off',!!G.hideProgress);}}
 function showMenu(){exitScreenshotMode();scene='menu';paused=false;hideScreens();$('#death').style.display='none';setPanels(false);const nch=Object.values(G.unlocks).filter(Boolean).length,nmp=Object.values(G.mapUnlocks||{}).filter(Boolean).length;$('#mFoot').textContent='Souls '+G.soul+'  ·  Champions '+nch+'/'+CHARS.length+'  ·  Realms '+nmp+'/'+MAPS.length;$('#mainMenu').style.display='flex';}
 function showSelect(){scene='select';hideScreens();buildCharCards();$('#charSelect').style.display='flex';}
 function beginGame(id,mapId){exitScreenshotMode();hideScreens();$('#death').style.display='none';scene='play';paused=false;setPanels(true);startRun(id,mapId);}
@@ -1917,6 +1942,7 @@ $('#pResume').onclick=function(){togglePause();};
 $('#pShot').onclick=function(){enterScreenshotMode();};
 $('#pMusic').onclick=function(){AUDIO.start();G.musicMuted=!G.musicMuted;if(!G.musicMuted)G.muted=false;applyAudioSettings();};
 $('#pSfx').onclick=function(){AUDIO.start();G.sfxMuted=!G.sfxMuted;if(!G.sfxMuted)G.muted=false;applyAudioSettings();};
+$('#pProgress').onclick=function(){G.hideProgress=!G.hideProgress;setPanels(scene==='play'&&!screenshotMode);updateAudioSettingsUI();};
 $('#pRestart').onclick=function(){paused=false;$('#pauseMenu').style.display='none';startRun(curChar.id);};
 $('#pMenu').onclick=function(){showMenu();};
 $('#pauseBtn').onclick=function(){togglePause();};
@@ -1927,6 +1953,11 @@ $('#soundBtn').onclick=function(){AUDIO.start();G.muted=!G.muted;applyAudioSetti
 function startAudioOnce(){AUDIO.start();window.removeEventListener('pointerdown',startAudioOnce);window.removeEventListener('keydown',startAudioOnce);}
 $('#stage').addEventListener('pointerdown',function(e){if(screenshotMode&&e.button===0){e.preventDefault();e.stopPropagation();exitScreenshotMode();}},true);
 window.addEventListener('pointerdown',startAudioOnce);window.addEventListener('keydown',startAudioOnce);
+function setManualKey(e,on){const k=(e.key||'').toLowerCase();if(!MOVE_KEY_SET.has(k)||(on&&isTypingTarget()))return false;moveKeys[k]=on;e.preventDefault();return true;}
+const MOVE_KEY_SET=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"]);
+window.addEventListener('keydown',function(e){setManualKey(e,true);});
+window.addEventListener('keyup',function(e){setManualKey(e,false);});
+window.addEventListener('blur',function(){for(const k in moveKeys)delete moveKeys[k];});
 window.addEventListener('keydown',function(e){const k=(e.key||'').toLowerCase();if(e.key==='Escape'||k==='p'){if(scene==='play')togglePause();else if($('#creditsScreen').style.display==='flex')showMenu();else if($('#realmSelect').style.display==='flex')showSelect();else if(scene==='select')showMenu();}});
 G=fresh();resize();window.addEventListener("resize",resize);checkUnlocks();checkMissions();applyAudioSettings();buildForge();buildSoulPane();buildQuests();buildCharCards();startRun();requestAnimationFrame(loop);showMenu();
 })();
