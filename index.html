@@ -2093,13 +2093,14 @@ function steerAroundObstacles(dx,dy,manual){
     const ahead=forward>0&&forward<86&&side<o.col+24;
     if(d<near||ahead){
       const pressure=clamp((near-d)/Math.max(1,near),0,1)+(ahead?clamp((o.col+24-side)/(o.col+24),0,1)*0.55:0);
-      ax+=nx*pressure*(manual?0.65:1.55);
-      ay+=ny*pressure*(manual?0.65:1.55);
+      ax+=nx*pressure*(manual?0.65:0.9);
+      ay+=ny*pressure*(manual?0.65:0.9);
       const dot=ix*nx+iy*ny,sgn=(-ny*ix+nx*iy)>=0?1:-1;
-      if(dot<0.55||ahead){tx+=-ny*sgn*pressure*(manual?0.45:1.2);ty+=nx*sgn*pressure*(manual?0.45:1.2);}
+      if(dot<0.55||ahead){tx+=-ny*sgn*pressure*(manual?0.45:0.7);ty+=nx*sgn*pressure*(manual?0.45:0.7);}
     }
   }
-  return {x:dx+ax+tx,y:dy+ay+ty};
+  let avx=ax+tx,avy=ay+ty;const al=Math.hypot(avx,avy),mxv=manual?1.4:1.0;if(al>mxv){const k=mxv/al;avx*=k;avy*=k;}
+  return {x:dx+avx,y:dy+avy};
 }
 function closeSolidObstacle(rad,pad){
   if(!hero)return null;
@@ -2163,16 +2164,22 @@ function update(dt){
   if(!manual&&wasManual){run.target=null;hero.vx*=0.55;hero.vy*=0.55;}
   if(!manual&&(!run.target||!beacons.includes(run.target)))run.target=chooseTargetBeacon();
   let dx=0,dy=0;
+  const wp=(!manual&&run.target)?routeWaypointTo(run.target,14):null;
+  const farTarget=!!(run.target&&dist(hero,run.target)>44);
+  const shoving=!manual&&(run.shoveT||0)>0&&!!wp;
+  if(shoving)run.shoveT-=dt;
   if(manual){
     dx=manual.x;dy=manual.y;
+  }else if(shoving){
+    const tx=wp.x-hero.x,ty=wp.y-hero.y,tl=Math.hypot(tx,ty)||1;dx=tx/tl;dy=ty/tl;
   }else{
-    if(run.target){const wp=routeWaypointTo(run.target,14),tx=wp.x-hero.x,ty=wp.y-hero.y,tl=Math.hypot(tx,ty)||1;dx+=tx/tl*1.0;dy+=ty/tl*1.0;}
-    let rx=0,ry=0;
-    for(const e of enemies){const ex=hero.x-e.x,ey=hero.y-e.y,d2=ex*ex+ey*ey;if(d2<19000){const inv=1/Math.max(34,Math.sqrt(d2));rx+=ex*inv*inv*1500;ry+=ey*inv*inv*1500;}}
-    const rl=Math.hypot(rx,ry);if(rl>0){const w=clamp(rl,0,2.2);dx+=rx/rl*w;dy+=ry/rl*w;}
+    let rx=0,ry=0,nNear=0;
+    for(const e of enemies){const ex=hero.x-e.x,ey=hero.y-e.y,d2=ex*ex+ey*ey;if(d2<19000){nNear++;const inv=1/Math.max(34,Math.sqrt(d2));rx+=ex*inv*inv*1500;ry+=ey*inv*inv*1500;}}
+    if(wp){const tx=wp.x-hero.x,ty=wp.y-hero.y,tl=Math.hypot(tx,ty)||1,pull=1.5+Math.min(1.4,nNear*0.06)+Math.min(1.8,(run.stuckT||0)*7);dx+=tx/tl*pull;dy+=ty/tl*pull;}
+    const rl=Math.hypot(rx,ry);if(rl>0){const w=clamp(rl,0,1.3);dx+=rx/rl*w;dy+=ry/rl*w;}
     let ox=0,oy=0;
     for(const o of obstacles){if(o.col<=0)continue;const ex=hero.x-o.x,ey=hero.y-o.y,d2=ex*ex+ey*ey,rr=o.col+54;if(d2<rr*rr){const inv=1/Math.max(20,Math.sqrt(d2));ox+=ex*inv*inv*2000;oy+=ey*inv*inv*2000;}}
-    const ol=Math.hypot(ox,oy);if(ol>0){const w=clamp(ol,0,2.0);dx+=ox/ol*w;dy+=oy/ol*w;}
+    const ol=Math.hypot(ox,oy);if(ol>0){const w=clamp(ol,0,1.5);dx+=ox/ol*w;dy+=oy/ol*w;}
     const mar=70;
     if(hero.x<mar)dx+=(mar-hero.x)*0.02;if(hero.x>WORLD.w-mar)dx-=(hero.x-(WORLD.w-mar))*0.02;
     if(hero.y<mar)dy+=(mar-hero.y)*0.02;if(hero.y>WORLD.h-mar)dy-=(hero.y-(WORLD.h-mar))*0.02;
@@ -2197,13 +2204,17 @@ function update(dt){
   }
   pushOut(hero,12);clampToRegion(hero,14);updateHeroMotionState(dt,dx/dl,dy/dl);
   const hMove=Math.hypot(hero.x-oldX,hero.y-oldY),stuckBlock=closeSolidObstacle(14,22),blockedAhead=!canStand(hero.x+(dx/dl)*24,hero.y+(dy/dl)*24,14,true);
-  if(!manual&&hero.longT<=0&&hero.dashT<=0&&(stuckBlock||blockedAhead)&&hMove<Math.max(0.28,sp*dt*0.12)){
+  if(!manual&&hero.longT<=0&&hero.dashT<=0&&farTarget&&hMove<Math.max(0.4,sp*dt*0.3)){
     run.stuckT=(run.stuckT||0)+dt;
-    if(!run.stuckSide){
-      if(stuckBlock){const cx=hero.x-stuckBlock.x,cy=hero.y-stuckBlock.y;run.stuckSide=(dx*cy-dy*cx)>=0?1:-1;}
-      else run.stuckSide=(Math.sin(hero.x*0.17+hero.y*0.23)>0)?1:-1;
+    if(stuckBlock||blockedAhead){
+      if(!run.stuckSide){
+        if(stuckBlock){const cx=hero.x-stuckBlock.x,cy=hero.y-stuckBlock.y;run.stuckSide=(dx*cy-dy*cx)>=0?1:-1;}
+        else run.stuckSide=(Math.sin(hero.x*0.17+hero.y*0.23)>0)?1:-1;
+      }
+      if(run.stuckT>0.30)escapeStuck(dx,dy,14,stuckBlock);
+    }else if(run.stuckT>0.18&&(run.shoveT||0)<=0){
+      run.shoveT=0.85;run.stuckT=0.05; // open-floor swarm pin: shove straight through toward target
     }
-    if(run.stuckT>0.36)escapeStuck(dx,dy,14,stuckBlock);
   }else{
     run.stuckT=Math.max(0,(run.stuckT||0)-dt*2.5);
     if(run.stuckT<=0)run.stuckSide=0;
