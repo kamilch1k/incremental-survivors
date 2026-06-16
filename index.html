@@ -1436,8 +1436,8 @@ const CHARS=[
   {id:"reaper",ic:"⚰",nm:"Reaper",bl:"Death's own hand. Drains the field and hungers ever for gold and souls.",tags:["Dark Magic","Greedy","Lifedrain"],mods:{magic:1.32,dmg:1.15,gold:1.2,hp:0.9,regenAdd:1.5},req:()=>false,reqTxt:"Mission: Survive 4 minutes"},
 ];
 function checkUnlocks(){const nu=[];
-  for(const ch of CHARS){if(!G.unlocks[ch.id]&&ch.req&&ch.req(G)){G.unlocks[ch.id]=true;nu.push({nm:ch.nm});}}
-  if(typeof MAPS!=="undefined"&&G.mapUnlocks){for(const m of MAPS){if(!G.mapUnlocks[m.id]&&m.req&&m.req(G)){G.mapUnlocks[m.id]=true;nu.push({nm:m.nm});}}}
+  for(const ch of CHARS){if(!G.unlocks[ch.id]&&ch.req&&ch.req(G)){G.unlocks[ch.id]=true;nu.push({type:"char",id:ch.id,nm:ch.nm});}}
+  if(typeof MAPS!=="undefined"&&G.mapUnlocks){for(const m of MAPS){if(!G.mapUnlocks[m.id]&&m.req&&m.req(G)){G.mapUnlocks[m.id]=true;nu.push({type:"map",id:m.id,nm:m.nm});}}}
   return nu;}
 const MISSIONS=[
   {id:"m_runs",nm:"Trial of Steel",ds:"Complete 5 runs",cur:g=>g.lt.runs,max:5,rewTxt:"Unlock Paladin",reward:{type:"char",id:"paladin"}},
@@ -1448,7 +1448,27 @@ const MISSIONS=[
   {id:"m_gold",nm:"Golden Hoard",ds:"Earn 100,000 gold (lifetime)",cur:g=>g.lt.gold,max:100000,rewTxt:"+20 souls",reward:{type:"souls",amt:20}},
   {id:"m_beacons",nm:"Bell-Ringer",ds:"Claim 40 relics (lifetime)",cur:g=>g.lt.beacons,max:40,rewTxt:"+15 souls",reward:{type:"souls",amt:15}},
 ];
-function checkMissions(){const nu=[];for(const q of MISSIONS){if(G.missions[q.id])continue;if(q.cur(G)>=q.max){G.missions[q.id]=true;if(q.reward.type==="char")G.unlocks[q.reward.id]=true;else if(q.reward.type==="souls")G.soul+=q.reward.amt;nu.push({nm:q.nm+" ✓"});}}return nu;}
+function checkMissions(){const nu=[];for(const q of MISSIONS){if(G.missions[q.id])continue;if(q.cur(G)>=q.max){G.missions[q.id]=true;if(q.reward.type==="char"){const ch=CHARS.find(c=>c.id===q.reward.id);G.unlocks[q.reward.id]=true;nu.push({type:"char",id:q.reward.id,nm:ch?ch.nm:q.reward.id,via:q.nm});}else if(q.reward.type==="souls"){G.soul+=q.reward.amt;nu.push({type:"mission",nm:q.nm+" ✓"});}}}return nu;}
+function unlockDisplay(u){return u.type==="char"?"Champion: "+u.nm:u.type==="map"?"Realm: "+u.nm:u.nm;}
+function notifyUnlocks(list){
+  const items=(list||[]).filter(Boolean);if(!items.length)return;
+  const major=items.filter(u=>u.type==="char"||u.type==="map"),chars=major.filter(u=>u.type==="char"),maps=major.filter(u=>u.type==="map");
+  const title=major.length?(chars.length&&maps.length?"NEW UNLOCKS":chars.length?"CHAMPION UNLOCKED":"REALM UNLOCKED"):"MISSION COMPLETE";
+  toast(title,items.map(unlockDisplay).join(" · "));
+  if(hero&&major.length){for(let i=0;i<major.length;i++){const u=major[i],col=u.type==="char"?"#ffd24a":"#7dffb0";popText(hero.x,hero.y-54-i*18,(u.type==="char"?"NEW CHAMPION: ":"NEW REALM: ")+u.nm,col,18);}spawnBurst(hero.x,hero.y-20,34,["#ffd24a","#fff4c0","#7dffb0","#bfe9ff","#c78bff"]);shake=Math.max(shake,12);AUDIO.sfx("unlock");}
+  else if(hero){spawnBurst(hero.x,hero.y-18,18,["#ffd24a","#fff4c0"]);AUDIO.sfx("level");}
+  if(chars.length)buildCharCards();
+  if(maps.length&&$("#realmSelect").style.display==="flex")buildRealmCards();
+}
+function syncRunBestsAndUnlocks(){
+  if(!run||!G)return;
+  let changed=false;
+  if(run.wave>G.best.wave){G.best.wave=run.wave;changed=true;}
+  if(run.time>G.best.time){G.best.time=run.time;changed=true;}
+  if(run.kills>G.best.kills){G.best.kills=run.kills;changed=true;}
+  if(run.level>G.best.level){G.best.level=run.level;changed=true;}
+  if(changed)notifyUnlocks(checkUnlocks());
+}
 let curChar=CHARS[0];
 function cm(k){const m=curChar.mods;return m[k]!==undefined?m[k]:(k==="regenAdd"?0:1);}
 const M=()=>G.m,S=()=>G.s;
@@ -1505,7 +1525,7 @@ function startRun(charId,mapId,opts){
   skyClouds=curMap.sky?Array.from({length:14},()=>({bx:rand(0,WORLD.w),y:rand(0,WORLD.h),sc:rand(4,9),spd:rand(6,24),al:rand(.6,1)})):null;
   const sub=document.querySelector('.title-badge .sub');if(sub)sub.textContent=curMap.nm;
   run={alive:true,time:0,kills:0,wave:1,level:startLevel(),xp:0,xpNeed:8,
-       spawnAcc:0,swarmAcc:0,flybyAcc:0,fireAcc:0,novaAcc:0,chainAcc:0,wispAcc:0,axeAcc:0,knifeAcc:0,waterAcc:0,stormAcc:0,spikeAcc:0,boomAcc:0,dashAcc:0,longDashAcc:0,voidAcc:0,briarAcc:0,vialAcc:0,frostAcc:0,lanceAcc:0,boneAcc:0,runeAcc:0,emberAcc:0,shadowAcc:0,crystalAcc:0,toxinAcc:0,starAcc:0,bellAcc:0,clockAcc:0,prismAcc:0,ghostAcc:0,guardAcc:0,pixieAcc:0,pigeonCoo:0,autoAcc:0,nextCasinoLevel:3,
+       spawnAcc:0,swarmAcc:0,flybyAcc:0,fireAcc:0,novaAcc:0,chainAcc:0,wispAcc:0,axeAcc:0,knifeAcc:0,waterAcc:0,stormAcc:0,spikeAcc:0,boomAcc:0,dashAcc:0,longDashAcc:0,voidAcc:0,briarAcc:0,vialAcc:0,frostAcc:0,lanceAcc:0,boneAcc:0,runeAcc:0,emberAcc:0,shadowAcc:0,crystalAcc:0,toxinAcc:0,starAcc:0,bellAcc:0,clockAcc:0,prismAcc:0,ghostAcc:0,guardAcc:0,pixieAcc:0,pigeonCoo:0,autoAcc:0,unlockAcc:0,nextCasinoLevel:3,
        dmgBuff:1,buffTimer:0,target:null,bossRef:null,nextBossWave:5,stuckT:0,stuckSide:0,
        b:{orbDps:1,boltDmg:1,fire:1,nova:1,extraOrb:0,chain:1,aura:1,wisp:1,axe:0,knife:0,water:0,storm:0,spike:0,pigeon:0,dash:0,longdash:0,void:0,briar:0,vial:0,frost:0,lance:0,bone:0,rune:0,ember:0,shadow:0,crystal:0,toxin:0,star:0,bell:0,clock:0,prism:0,boom:0,ghostknight:0,boneguard:0,pixie:0}};
   for(let i=1;i<startLevel();i++)applyLevelGain(true);
@@ -2034,6 +2054,7 @@ function loop(now){const dt=Math.min((now-(loop._l||now))/1000,0.05);loop._l=now
 function update(dt){
   run.time+=dt;
   const nw=1+Math.floor(run.time/12);if(nw>run.wave){run.wave=nw;toast("WAVE "+nw,"the horde swells");AUDIO.sfx("wave");}
+  run.unlockAcc+=dt;if(run.unlockAcc>=0.45){run.unlockAcc=0;syncRunBestsAndUnlocks();}
   if(run.wave>=run.nextBossWave&&!run.bossRef){run.nextBossWave+=5;spawnBoss();}
   if(run.buffTimer>0){run.buffTimer-=dt;if(run.buffTimer<=0)run.dmgBuff=1;}
   hero.max=Math.max(hero.max,maxHpV());
@@ -2227,9 +2248,7 @@ function update(dt){
   if(hero.hp<=0)endRun();
 }
 function noteBestLevel(){
-  if(!run||run.level<=G.best.level)return;
-  G.best.level=run.level;const nu=checkUnlocks();
-  if(nu.length){toast("REALM UNLOCKED",nu.map(x=>x.nm).join(" · "));if(hero)spawnBurst(hero.x,hero.y-18,24,["#ffd24a","#7dffb0","#bfe9ff"]);}
+  syncRunBestsAndUnlocks();
 }
 function gainXp(v){run.xp+=v;while(run.xp>=run.xpNeed){run.xp-=run.xpNeed;run.level++;run.xpNeed=Math.floor(run.xpNeed*1.22+4);applyLevelGain(false);noteBestLevel();}}
 function endRun(){
@@ -2238,8 +2257,8 @@ function endRun(){
   const souls=Math.floor((run.time/20+run.kills/110)*soulBonus());run._souls=Math.max(souls,0);G.soul+=run._souls;
   G.lt.runs++;
   if(run.wave>G.best.wave)G.best.wave=run.wave;if(run.time>G.best.time)G.best.time=run.time;if(run.kills>G.best.kills)G.best.kills=run.kills;if(run.level>G.best.level)G.best.level=run.level;
-  const nu=checkUnlocks().concat(checkMissions());
-  const du=$("#dUnlock");if(nu.length){du.style.display="block";du.textContent="✦ "+nu.map(c=>c.nm).join("  ·  ");}else du.style.display="none";
+  const nu=checkUnlocks().concat(checkMissions());notifyUnlocks(nu);
+  const du=$("#dUnlock");if(nu.length){du.style.display="block";du.textContent="✦ "+nu.map(unlockDisplay).join("  ·  ");}else du.style.display="none";
   buildQuests();
   spawnParts(hero.x,hero.y,40,"#c78bff");
   $("#dWave").textContent=run.wave;$("#dTime").textContent=fmtTime(run.time);$("#dKills").textContent=run.kills;
@@ -2524,6 +2543,7 @@ const AUDIO=(function(){
       else if(name==="pigeon"){voice(mtof(71),t,0.12,"sine",0.16);voice(mtof(67),t+0.08,0.16,"sine",0.14);}
       else if(name==="roll"){const n=72+((Math.random()*9)|0);voice(mtof(n),t,0.045,"square",0.11);voice(mtof(n-12),t+0.012,0.04,"triangle",0.06);}
       else if(name==="summon"){voice(mtof(60),t,0.18,"triangle",0.18);voice(mtof(67),t+0.06,0.22,"sine",0.16);voice(mtof(79),t+0.12,0.26,"sine",0.14);}
+      else if(name==="unlock"){voice(mtof(60),t,0.18,"triangle",0.2);voice(mtof(67),t+0.08,0.22,"square",0.18);voice(mtof(72),t+0.16,0.28,"square",0.16);voice(mtof(79),t+0.27,0.4,"sine",0.2);}
       else if(name==="jackpot"){voice(mtof(43),t,0.34,"sawtooth",0.28);for(let i=0;i<7;i++)voice(mtof(72+i*2),t+i*0.045,0.09,"square",0.14);voice(mtof(84),t+0.34,0.36,"triangle",0.24);}
       else if(name==="hurt"){voice(mtof(38),t,0.08,"sawtooth",0.18);voice(mtof(31),t+0.025,0.1,"square",0.1);}
       else if(name==="boom"){voice(mtof(60),t,0.18,"triangle",0.2);voice(mtof(67),t+0.05,0.18,"triangle",0.15);}
