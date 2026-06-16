@@ -249,9 +249,11 @@
   @keyframes casBlink{from{opacity:.72}to{opacity:1}}
   @keyframes casMarkPulse{from{opacity:.82}to{opacity:1}}
   @keyframes casCellJitter{from{transform:translateY(0)}to{transform:translateY(1px)}}
-  #app.shot #side,#app.shot #hud,#app.shot #bars,#app.shot #pauseBtn,#app.shot #cornerBtns,#app.shot #audioDock,#app.shot #toast,#app.shot #casino,#app.shot #death,#app.shot .screen,#app.shot .title-badge{display:none !important;}
+  #app.shot #side,#app.shot #hud,#app.shot #pauseBtn,#app.shot #cornerBtns,#app.shot #audioDock,#app.shot #toast,#app.shot #casino,#app.shot #death,#app.shot .screen,#app.shot .title-badge{display:none !important;}
+  #app.shot:not(.wallpaper) #bars{display:none !important;}
   #app.shot #stage{flex:1 1 100% !important;cursor:crosshair;}
   #app.wallpaper #stage{cursor:none;}
+  #app.wallpaper #bars{display:block !important;width:min(520px,72vw) !important;bottom:22px !important;}
   /* ===================== Y2K CHUNK PASS — flat, blocky, no smooth fills ===================== */
   :root{--ol:#000;--bev1:rgba(255,236,200,.22);--bev2:rgba(0,0,0,.62);}
   body{background:#0c0a07;}
@@ -594,6 +596,7 @@
       <div class="screenSub">an undying knight &middot; an endless horde</div>
       <div class="menuBtns">
         <button class="sbtn primary" id="mPlay">Enter the Field</button>
+        <button class="sbtn" id="mWallpaper">Desktop Background</button>
         <button class="sbtn" id="mContinue">Continue from Code</button>
       </div>
       <div class="screenFoot" id="mFoot">Souls reaped: 0</div>
@@ -1490,11 +1493,14 @@ function newBeacon(awayFrom){
   return {x,y,type,pulse:rand(0,TAU)};
 }
 function newBeaconType(type,awayFrom){const b=newBeacon(awayFrom);b.type=type;return b;}
-function startRun(charId,mapId){
+function startRun(charId,mapId,opts){
+  opts=opts||{};
   if(charId){curChar=CHARS.find(c=>c.id===charId)||curChar;G.char=curChar.id;}
   if(mapId)curMap=getMap(mapId);else if(!curMap)curMap=getMap(G.map);
-  if(G.mapUnlocks&&!G.mapUnlocks[curMap.id])curMap=getMap("dungeon");
-  G.map=curMap.id;groundPat=curMap.pat;
+  const allowLocked=!!(opts.allowLocked||wallpaperMode||WALLPAPER_MODE);
+  if(!allowLocked&&G.mapUnlocks&&!G.mapUnlocks[curMap.id])curMap=getMap("dungeon");
+  if(!allowLocked||!G.mapUnlocks||G.mapUnlocks[curMap.id])G.map=curMap.id;
+  groundPat=curMap.pat;
   WORLD.w=(curMap.world&&curMap.world.w)||2600;WORLD.h=(curMap.world&&curMap.world.h)||1800;
   skyClouds=curMap.sky?Array.from({length:14},()=>({bx:rand(0,WORLD.w),y:rand(0,WORLD.h),sc:rand(4,9),spd:rand(6,24),al:rand(.6,1)})):null;
   const sub=document.querySelector('.title-badge .sub');if(sub)sub.textContent=curMap.nm;
@@ -1967,6 +1973,7 @@ function isTypingTarget(){
 }
 function movementKey(e){return MOVE_CODE_MAP[e.code]||((e.key||"").toLowerCase());}
 function manualVector(){
+  if(wallpaperMode)return null;
   if(isTypingTarget())return null;
   let x=0,y=0;
   if(moveKeys.a||moveKeys.arrowleft)x--;
@@ -2021,7 +2028,7 @@ function updateHeroMotionState(dt,ix,iy){
 
 let shake=0,t=0,deathTimer=0,hidden=false,hiddenAt=0,toastT=0;
 function loop(now){const dt=Math.min((now-(loop._l||now))/1000,0.05);loop._l=now;t+=dt;
-  if(!paused&&(scene==='play'||scene==='menu'||scene==='select')){ if(run.alive)update(dt); else if(scene==='play'){deathTimer-=dt;updateDeath();} else startRun(); }
+  if(!paused&&(scene==='play'||scene==='menu'||scene==='select')){ if(run.alive){update(dt);wallpaperTick(dt);} else if(scene==='play'){deathTimer-=dt;updateDeath();} else startRun(); }
   render();hudTick(dt);casinoTick(dt);requestAnimationFrame(loop);}
 
 function update(dt){
@@ -2239,7 +2246,7 @@ function endRun(){
   $("#dSouls").textContent="+"+run._souls+" soul"+(run._souls===1?"":"s")+" minted";
   $("#death").style.display="flex";deathTimer=3.2;buildSoulPane();
 }
-function updateDeath(){if(deathTimer>0)$("#dCd").textContent="Rising again in "+Math.ceil(deathTimer)+"…";else startRun();}
+function updateDeath(){if(deathTimer>0)$("#dCd").textContent="Rising again in "+Math.ceil(deathTimer)+"…";else if(wallpaperMode){startWallpaperRun(true);enterCleanView(true);}else startRun();}
 
 function spawnParts(x,y,n,col){for(let i=0;i<n;i++){const a=rand(0,TAU),s=rand(1,4.5);parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.7,1),r:rand(1,2.4),col});}}
 function spawnBurst(x,y,n,cols){for(let i=0;i<n;i++){const a=rand(0,TAU),s=rand(1.5,6);parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.7,1.3),r:rand(1,2.6),col:cols[(Math.random()*cols.length)|0]});}}
@@ -2527,6 +2534,8 @@ const AUDIO=(function(){
 const modal=$("#modal");
 const URL_PARAMS=new URLSearchParams(location.search);
 const WALLPAPER_MODE=URL_PARAMS.get("wallpaper")==="1"||URL_PARAMS.get("mode")==="wallpaper";
+const WALLPAPER_MAP_SECONDS=72;
+let wallpaperMapIndex=0,wallpaperCycleT=0;
 function openModal(title,text,action){$("#modalTitle").textContent=title;$("#modalText").value=text;$("#modalAction").textContent=action;modal.style.display="flex";}
 $("#modalClose").onclick=()=>modal.style.display="none";
 function encodeSave(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
@@ -2547,10 +2556,24 @@ function wallpaperUrl(){
   const u=new URL(location.href);u.searchParams.set("wallpaper","1");u.searchParams.set("save",currentSaveCode());u.hash="";
   return u.toString();
 }
+function syncWallpaperIndex(id){const i=MAPS.findIndex(m=>m.id===(id||""));wallpaperMapIndex=i>=0?i:0;}
+function startWallpaperRun(advance){
+  clearManualKeys();hideScreens();modal.style.display="none";$("#death").style.display="none";scene="play";paused=false;setPanels(true);
+  const maps=MAPS.length?MAPS:[getMap("dungeon")];
+  if(advance)wallpaperMapIndex=(wallpaperMapIndex+1)%maps.length;
+  else syncWallpaperIndex((curMap&&curMap.id)||G.map);
+  startRun(G.char||"knight",maps[wallpaperMapIndex].id,{allowLocked:true});
+  wallpaperCycleT=0;focusPlayfield();
+}
+function wallpaperTick(dt){
+  if(!wallpaperMode||!run||!run.alive)return;
+  wallpaperCycleT+=dt;
+  if(wallpaperCycleT>=WALLPAPER_MAP_SECONDS&&!casino.active){startWallpaperRun(true);enterCleanView(true);}
+}
 function showWallpaperModal(){
   const url=wallpaperUrl();
-  openModal("Desktop wallpaper mode","Browsers cannot set the Windows desktop background directly. Use this URL in a PC live wallpaper tool like Lively Wallpaper, or in a small desktop wrapper. It launches the game with UI hidden, sound off, and progression still running.\n\n"+url,"Copy URL");
-  $("#modalAction").onclick=()=>copyModalText("URL copied!");
+  openModal("Desktop background mode","Start Mode switches this tab into a hands-free view: no menus, no shop, no minimap, only damage numbers and the HP/XP bars. It cycles every realm automatically. Press Esc or P to return to the menu, or close the wallpaper window to stop it.\n\nFor a true Windows desktop background behind icons, use the desktop shortcut named Incremental Survivors Background or paste this URL into Lively Wallpaper:\n\n"+url,"Start Mode");
+  $("#modalAction").onclick=()=>{startWallpaperRun(false);enterWallpaperMode();};
 }
 $("#saveBtn").onclick=()=>{const code=currentSaveCode();openModal("Save code — copy & keep it",code,"Copy");$("#modalAction").onclick=()=>copyModalText("Copied!");};
 $("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$("#modalAction").onclick=()=>{try{const o=decodeSave($("#modalText").value);const sec=applySaveObject(o);modal.style.display="none";buildForge();buildSoulPane();buildQuests();buildCharCards();applyAudioSettings();beginGame(G.char,G.map);if(sec>30)grantAway(sec);}catch(err){$("#modalAction").textContent="Invalid code";}};};
@@ -2561,8 +2584,9 @@ function setPanels(on){const app=$('#app');if(app)app.classList.toggle('progress
 function centerCameraNow(){if(hero){cam.x=hero.x-W/2;cam.y=hero.y-Hh/2;}}
 function enterCleanView(asWallpaper){if(scene!=='play'||!run||!run.alive)return;screenshotMode=true;wallpaperMode=!!asWallpaper;paused=false;hideScreens();modal.style.display='none';$('#death').style.display='none';$('#app').classList.add('shot');$('#app').classList.toggle('wallpaper',wallpaperMode);const c=$("#casino");if(c)c.classList.remove("show");resize();centerCameraNow();}
 function enterScreenshotMode(){enterCleanView(false);}
-function enterWallpaperMode(){if(scene!=='play'||!run||!run.alive)beginGame(G.char,G.map);enterCleanView(true);}
+function enterWallpaperMode(){if(scene!=='play'||!run||!run.alive)startWallpaperRun(false);else syncWallpaperIndex(curMap&&curMap.id);enterCleanView(true);}
 function exitScreenshotMode(){if(!screenshotMode)return;screenshotMode=false;wallpaperMode=false;$('#app').classList.remove('shot','wallpaper');if(scene==='play')setPanels(true);resize();centerCameraNow();}
+function exitWallpaperMode(){if(!wallpaperMode)return;exitScreenshotMode();showMenu();}
 function showCredits(){hideScreens();$('#death').style.display='none';$('#cornerBtns').style.display='none';$('#creditsScreen').style.display='flex';}
 function applyAudioSettings(){AUDIO.setEnabled(!G.muted);AUDIO.setMusic(!G.musicMuted);AUDIO.setSfx(!G.sfxMuted);updateSoundBtn();updateAudioSettingsUI();}
 function updateSoundBtn(){const b=$('#soundBtn');if(!b)return;b.innerHTML=AUDIO.isOn()?'&#9834;':'&#9651;';b.classList.toggle('off',!AUDIO.isOn());}
@@ -2592,6 +2616,7 @@ function buildCharCards(){const c=$('#charCards');c.innerHTML='';for(const ch of
   else{el.onclick=function(){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');toast('STILL LOCKED',ch.reqTxt);};}
   c.appendChild(el);}}
 $('#mPlay').onclick=showSelect;
+$('#mWallpaper').onclick=function(){showWallpaperModal();};
 $('#cBack').onclick=showMenu;
 $('#rBack').onclick=showSelect;
 $('#pResume').onclick=function(){togglePause();};
@@ -2617,12 +2642,12 @@ window.addEventListener('keydown',function(e){setManualKey(e,true);},true);
 window.addEventListener('keyup',function(e){setManualKey(e,false);},true);
 window.addEventListener('blur',clearManualKeys);
 document.addEventListener('visibilitychange',function(){if(document.hidden)clearManualKeys();});
-window.addEventListener('keydown',function(e){const k=(e.key||'').toLowerCase();if(e.key==='Escape'||k==='p'){if(scene==='play')togglePause();else if($('#creditsScreen').style.display==='flex')showMenu();else if($('#realmSelect').style.display==='flex')showSelect();else if(scene==='select')showMenu();}});
+window.addEventListener('keydown',function(e){const k=(e.key||'').toLowerCase();if(e.key==='Escape'||k==='p'){if(wallpaperMode){e.preventDefault();exitWallpaperMode();return;}if(scene==='play')togglePause();else if($('#creditsScreen').style.display==='flex')showMenu();else if($('#realmSelect').style.display==='flex')showSelect();else if(scene==='select')showMenu();}});
 G=fresh();
 if(WALLPAPER_MODE&&URL_PARAMS.get("save")){try{applySaveObject(decodeSave(URL_PARAMS.get("save")));}catch(_){}}
 if(WALLPAPER_MODE){G.muted=true;G.musicMuted=true;G.sfxMuted=true;}
 resize();window.addEventListener("resize",resize);checkUnlocks();checkMissions();applyAudioSettings();buildForge();buildSoulPane();buildQuests();buildCharCards();
-if(WALLPAPER_MODE){beginGame(G.char,G.map);enterWallpaperMode();}else{startRun();showMenu();}
+if(WALLPAPER_MODE){enterWallpaperMode();}else{startRun();showMenu();}
 requestAnimationFrame(loop);
 })();
 </script>

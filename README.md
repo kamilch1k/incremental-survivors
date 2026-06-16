@@ -12,6 +12,14 @@ Use the link above, or open **`index.html`** in any modern browser. That's it.
 - Walk onto shrines and roaming chests for buffs, free levels, and new abilities (rolled on a non-blocking casino reel).
 - Save/Load via copyable **codes** (bottom of the panel). Esc / P pauses.
 
+## Local desktop mode
+
+On Windows, run **`Start-DesktopBackground.ps1`** to launch the local game as a hands-free animated background. It starts in wallpaper mode automatically, hides the shop and HUD, keeps only damage numbers plus HP/XP bars, and cycles through every realm without clicks.
+
+- Press **Esc** or **P** while the game has focus to return to the normal menu.
+- Run **`Stop-DesktopBackground.ps1`** to close the background browser process.
+- Browser tabs cannot set the Windows desktop background directly; for a true behind-icons wallpaper, use the script shortcut or paste the `?wallpaper=1` URL into a live wallpaper tool such as Lively Wallpaper.
+
 ## Features
 
 - **Champions** — 8 unlockable heroes, each with distinct mods.
