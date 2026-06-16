@@ -88,7 +88,7 @@
   #modal{position:fixed;inset:0;background:rgba(4,8,14,.8);display:none;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(3px);}
   #modal .box{width:min(460px,90%);background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:20px;}
   #modal h3{font-weight:700;letter-spacing:.08em;color:var(--lume);margin-bottom:10px;}
-  #modal textarea{width:100%;height:118px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:10px;font-family:'Pixelify Sans',serif;font-size:13px;resize:none;}
+  #modal .body{width:100%;min-height:92px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:10px;font-family:'Pixelify Sans',serif;font-size:13px;line-height:1.45;white-space:pre-wrap;text-align:left;}
   #modal .row{display:flex;gap:9px;margin-top:12px;}
   #modal button{flex:1;padding:10px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);cursor:pointer;font-weight:600;font-size:12px;font-family:inherit;}
   #modal button.go{background:var(--lume);color:#06121a;border-color:var(--lume);}
@@ -176,7 +176,7 @@
   #death .big{text-shadow:3px 3px 0 #000 !important;}
   #death .row .n,#death .gain{text-shadow:2px 2px 0 #000 !important;}
   /* carved framed panels */
-  .chip,#toast,.card,.creditsBox,#modal .box,.up,.note,#modal textarea{
+  .chip,#toast,.card,.creditsBox,#modal .box,.up,.note,#modal .body{
     border:2px solid var(--ol) !important;background-image:none !important;
     box-shadow:inset 2px 2px 0 rgba(255,236,200,.10),inset -2px -2px 0 rgba(0,0,0,.5) !important;}
   .card,.creditsBox{background:var(--panel) !important;}
@@ -267,7 +267,7 @@
   #side header{border-bottom:3px solid #000 !important;}
   .pane{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 2px,rgba(0,0,0,0) 2px 4px);}
   /* chunky framed panels */
-  .chip,.card,.creditsBox,#modal .box,.up,.note,#toast,.quest,#modal textarea{
+  .chip,.card,.creditsBox,#modal .box,.up,.note,#toast,.quest,#modal .body{
     border:3px solid #000 !important;
     box-shadow:inset 2px 2px 0 var(--bev1),inset -2px -2px 0 var(--bev2),3px 3px 0 rgba(0,0,0,.6) !important;}
   .up{margin-bottom:9px !important;}
@@ -340,12 +340,12 @@
   .quest .qnm{font-size:15px !important;}.quest .qrew{font-family:'VT323',monospace !important;font-size:13px !important;}
   .lockrow .lk{font-family:'VT323',monospace !important;font-size:13px !important;}
   .barLab,.quest .qprog{font-size:11px !important;color:#06070d !important;}
-  #modal textarea{font-family:'VT323',monospace !important;font-size:15px !important;}
+  #modal .body{font-family:'VT323',monospace !important;font-size:15px !important;}
   /* --- panels: carved/sunken hard bevel, flat fills --- */
   #side{background:var(--bg2) !important;border-left:3px solid #000 !important;background-image:none !important;}
   #side header{border-bottom:3px solid #000 !important;}
   .pane{background-image:none !important;}
-  .chip,.card,.creditsBox,#modal .box,.up,.note,#toast,.quest,#modal textarea,.up .ic,.card .cic{
+  .chip,.card,.creditsBox,#modal .box,.up,.note,#toast,.quest,#modal .body,.up .ic,.card .cic{
     border:3px solid #000 !important;background-image:none !important;
     box-shadow:inset 2px 2px 0 var(--bdark),inset -2px -2px 0 var(--blite) !important;}
   .card,.creditsBox,#modal .box,#toast{background:var(--panel) !important;}
@@ -383,7 +383,7 @@
   /* ============================ WINDOWS 2000 UGLY THEME (final, wins) ============================ */
   body,.title-badge h1,.title-badge .sub,.screenTitle,.screenSub,.screenFoot,.chip .k,.chip .v,#goldBig,#goldRate,
   #soulRow,#soulRow b,.lab,.grp,.up,.up .nm,.up .ds,.up .lv,.up .cost,.up .ic,.tab,.sbtn,.mini,.cbtn,.card,.card .cnm,
-  .cbl,.tag,.note,.quest,.quest .qnm,.quest .qrew,.qds,.barLab,.qprog,#modal,#modal h3,#modal textarea,#modal button,
+  .cbl,.tag,.note,.quest,.quest .qnm,.quest .qrew,.qds,.barLab,.qprog,#modal,#modal h3,#modal .body,#modal button,
   #death,#death .big,#death .row .n,#death .row .l,#death .gain,#death .cd,#death button,.creditsBox,.creditsBox p,
   .cgrp,.casTtl,.casRes,.lockrow .lk,.lockrow .rq{
     font-family:Tahoma,"MS Sans Serif",Geneva,sans-serif !important;letter-spacing:0 !important;text-shadow:none !important;}
@@ -401,9 +401,9 @@
     border:none !important;background:#c0c0c0 !important;background-image:none !important;color:#000 !important;
     box-shadow:inset -1px -1px #0a0a0a,inset 1px 1px #ffffff,inset -2px -2px #808080,inset 2px 2px #dfdfdf !important;}
   /* SUNKEN bevel */
-  .pane,#modal textarea,.up .ic,.card .cic,.bar,.quest .qbar,.note,.casWin,#modal .box{
+  .pane,#modal .body,.up .ic,.card .cic,.bar,.quest .qbar,.note,.casWin,#modal .box{
     box-shadow:inset -1px -1px #ffffff,inset 1px 1px #808080,inset -2px -2px #dfdfdf,inset 2px 2px #0a0a0a !important;}
-  .note,.up .ic,.card .cic,#modal textarea,.casWin{background:#ffffff !important;}
+  .note,.up .ic,.card .cic,#modal .body,.casWin{background:#ffffff !important;}
   #modal .box{background:#c0c0c0 !important;}
   .sbtn,.mini,.cbtn,#death button,#modal button{font-weight:bold !important;font-size:12px !important;color:#000 !important;}
   .sbtn{padding:8px 14px !important;}
@@ -452,7 +452,7 @@
   #death .row .n{color:#ffffff !important;}#death .row .l{color:#c0c0c0 !important;}
   #death .gain{color:#ffd24a !important;}#death .cd{color:#c0c0c0 !important;}#death button{color:#000 !important;}
   #modal h3{color:#000 !important;font-weight:bold !important;font-size:13px !important;}
-  #modal textarea{color:#000 !important;}#modal button.go{background:#c0c0c0 !important;color:#000 !important;}
+  #modal .body{color:#000 !important;}#modal button.go{background:#c0c0c0 !important;color:#000 !important;}
   .casBox{background:#c0c0c0 !important;}
   .casTtl{color:#000 !important;font-weight:bold !important;font-size:11px !important;}
   .casWin{background:#0c1730 !important;}
@@ -534,7 +534,7 @@
     .creditsBox{max-width:100% !important;padding:10px !important;}
     .creditsBox p{font-size:12px !important;line-height:1.25 !important;}
     #modal .box{width:calc(100vw - 20px) !important;max-height:calc(100dvh - 24px) !important;overflow:auto !important;padding:12px !important;}
-    #modal textarea{height:96px !important;}
+    #modal .body{min-height:96px !important;}
     #modal .row{gap:6px !important;}
   }
   @media (max-width:430px){
@@ -597,7 +597,6 @@
       <div class="menuBtns">
         <button class="sbtn primary" id="mPlay">Enter the Field</button>
         <button class="sbtn" id="mWallpaper">Desktop Background</button>
-        <button class="sbtn" id="mContinue">Continue from Code</button>
       </div>
       <div class="screenFoot" id="mFoot">Souls reaped: 0</div>
       <div class="screenFoot" style="font-size:10px;opacity:.55;margin-top:0">Art: 0x72 DungeonTileset II · CC0</div>
@@ -661,16 +660,12 @@
       <div class="note">Souls are minted every time your revenant falls. Their power is <b>permanent</b> — surviving death, reforging, everything. Spend them to make every future run begin stronger.</div>
     </div>
     <div id="questPane" class="pane"></div>
-    <footer>
-      <button class="mini" id="saveBtn">Save code</button>
-      <button class="mini" id="loadBtn">Load code</button>
-    </footer>
   </aside>
 </div>
 <div id="modal"><div class="box">
-  <h3 id="modalTitle">Save code</h3>
-  <textarea id="modalText" spellcheck="false"></textarea>
-  <div class="row"><button id="modalAction" class="go">Copy</button><button id="modalClose">Close</button></div>
+  <h3 id="modalTitle">Desktop background</h3>
+  <div id="modalText" class="body"></div>
+  <div class="row"><button id="modalAction" class="go">Start</button><button id="modalClose">Close</button></div>
 </div></div>
 
 <script>
@@ -1402,7 +1397,7 @@ function fresh(){return{
   missions:{},auto:true,
   mapUnlocks:{dungeon:true,green:false,heaven:false,inferno:false},
   muted:false,musicMuted:false,sfxMuted:false,hideProgress:false,map:"dungeon",
-  lastActive:Date.now(),goldEMA:0
+  goldEMA:0
 };}
 
 const META_CORE=[
@@ -2584,24 +2579,10 @@ const URL_PARAMS=new URLSearchParams(location.search);
 const WALLPAPER_MODE=URL_PARAMS.get("wallpaper")==="1"||URL_PARAMS.get("mode")==="wallpaper";
 const WALLPAPER_MAP_SECONDS=72;
 let wallpaperMapIndex=0,wallpaperCycleT=0;
-function openModal(title,text,action){$("#modalTitle").textContent=title;$("#modalText").value=text;$("#modalAction").textContent=action;modal.style.display="flex";}
+function openModal(title,text,action){$("#modalTitle").textContent=title;$("#modalText").textContent=text;$("#modalAction").textContent=action;modal.style.display="flex";}
 $("#modalClose").onclick=()=>modal.style.display="none";
-function encodeSave(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
-function decodeSave(code){return JSON.parse(decodeURIComponent(escape(atob((code||"").trim()))));}
-function applySaveObject(o){
-  o=o||{};
-  G=Object.assign(fresh(),o);
-  G.m=Object.assign(fresh().m,o.m||{});G.s=Object.assign(fresh().s,o.s||{});G.best=Object.assign(fresh().best,o.best||{});
-  G.unlocks=Object.assign(fresh().unlocks,o.unlocks||{});G.mapUnlocks=Object.assign(fresh().mapUnlocks,o.mapUnlocks||{});
-  G.lt=Object.assign(fresh().lt,o.lt||{});G.missions=Object.assign({},o.missions||{});
-  checkUnlocks();checkMissions();if(!G.unlocks[G.char])G.char="knight";if(!G.mapUnlocks[G.map])G.map="dungeon";
-  curChar=CHARS.find(c=>c.id===G.char)||CHARS[0];
-  return (Date.now()-(o.lastActive||Date.now()))/1000;
-}
-function currentSaveCode(){G.lastActive=Date.now();return encodeSave(G);}
-function copyModalText(done){$("#modalText").select();try{document.execCommand("copy");}catch(_){}$("#modalAction").textContent=done||"Copied!";}
 function wallpaperUrl(){
-  const u=new URL(location.href);u.searchParams.set("wallpaper","1");u.searchParams.set("save",currentSaveCode());u.hash="";
+  const u=new URL(location.href);u.search="";u.searchParams.set("wallpaper","1");u.hash="";
   return u.toString();
 }
 function syncWallpaperIndex(id){const i=MAPS.findIndex(m=>m.id===(id||""));wallpaperMapIndex=i>=0?i:0;}
@@ -2623,8 +2604,6 @@ function showWallpaperModal(){
   openModal("Desktop background mode","Start Mode switches this tab into a hands-free view: no menus, no shop, no minimap, only damage numbers and the HP/XP bars. It cycles every realm automatically. Press Esc or P to return to the menu, or close the wallpaper window to stop it.\n\nFor a true Windows desktop background behind icons, use the desktop shortcut named Incremental Survivors Background or paste this URL into Lively Wallpaper:\n\n"+url,"Start Mode");
   $("#modalAction").onclick=()=>{startWallpaperRun(false);enterWallpaperMode();};
 }
-$("#saveBtn").onclick=()=>{const code=currentSaveCode();openModal("Save code — copy & keep it",code,"Copy");$("#modalAction").onclick=()=>copyModalText("Copied!");};
-$("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$("#modalAction").onclick=()=>{try{const o=decodeSave($("#modalText").value);const sec=applySaveObject(o);modal.style.display="none";buildForge();buildSoulPane();buildQuests();buildCharCards();applyAudioSettings();beginGame(G.char,G.map);if(sec>30)grantAway(sec);}catch(err){$("#modalAction").textContent="Invalid code";}};};
 
 let scene='menu',paused=false,screenshotMode=false,wallpaperMode=false;
 function hideScreens(){$('#mainMenu').style.display='none';$('#charSelect').style.display='none';$('#realmSelect').style.display='none';$('#pauseMenu').style.display='none';$('#creditsScreen').style.display='none';}
@@ -2676,7 +2655,6 @@ $('#pWallpaper').onclick=function(){showWallpaperModal();};
 $('#pRestart').onclick=function(){paused=false;$('#pauseMenu').style.display='none';startRun(curChar.id);};
 $('#pMenu').onclick=function(){showMenu();};
 $('#pauseBtn').onclick=function(){togglePause();};
-$('#mContinue').onclick=function(){$('#loadBtn').click();};
 $('#creditsBtn').onclick=showCredits;
 $('#crBack').onclick=showMenu;
 $('#soundBtn').onclick=function(){AUDIO.start();G.muted=!G.muted;applyAudioSettings();};
@@ -2692,7 +2670,6 @@ window.addEventListener('blur',clearManualKeys);
 document.addEventListener('visibilitychange',function(){if(document.hidden)clearManualKeys();});
 window.addEventListener('keydown',function(e){const k=(e.key||'').toLowerCase();if(e.key==='Escape'||k==='p'){if(wallpaperMode){e.preventDefault();exitWallpaperMode();return;}if(scene==='play')togglePause();else if($('#creditsScreen').style.display==='flex')showMenu();else if($('#realmSelect').style.display==='flex')showSelect();else if(scene==='select')showMenu();}});
 G=fresh();
-if(WALLPAPER_MODE&&URL_PARAMS.get("save")){try{applySaveObject(decodeSave(URL_PARAMS.get("save")));}catch(_){}}
 if(WALLPAPER_MODE){G.muted=true;G.musicMuted=true;G.sfxMuted=true;}
 resize();window.addEventListener("resize",resize);checkUnlocks();checkMissions();applyAudioSettings();buildForge();buildSoulPane();buildQuests();buildCharCards();
 if(WALLPAPER_MODE){enterWallpaperMode();}else{startRun();showMenu();}

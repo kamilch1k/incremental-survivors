@@ -10,7 +10,7 @@ Use the link above, or open **`index.html`** in any modern browser. That's it.
 
 - The hero fights and moves automatically; you steer the *meta*: pick a champion and a realm, then spend **Gold** (per-run power) in the Forge and **Souls** (permanent) in Ascend.
 - Walk onto shrines and roaming chests for buffs, free levels, and new abilities (rolled on a non-blocking casino reel).
-- Save/Load via copyable **codes** (bottom of the panel). Esc / P pauses.
+- Esc / P pauses during a run.
 
 ## Local desktop mode
 
