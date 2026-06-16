@@ -465,11 +465,88 @@
   /* character-select sprites: contained + uniform in their box */
   .card .cic{width:48px !important;height:48px !important;overflow:hidden !important;display:grid !important;place-items:center !important;}
   .card .cic img{width:40px !important;height:40px !important;object-fit:contain !important;image-rendering:pixelated !important;}
-  /* keep the upgrade panel docked on the right at every screen size (never stack/cover) */
+  /* mobile: keep the field playable, move progression into a compact bottom tray */
   @media (max-width:860px){
-    #app{flex-direction:row !important;}
-    #side{width:200px !important;flex:0 0 200px !important;height:100vh !important;border-left:2px solid #0a0a0a !important;border-top:none !important;}
-    #stage{flex:1 1 auto !important;min-height:0 !important;}
+    html,body,#app{height:100dvh !important;height:100svh !important;overflow:hidden !important;}
+    #app{flex-direction:column !important;width:100vw !important;}
+    #stage{flex:1 1 auto !important;min-height:0 !important;width:100% !important;}
+    #side{
+      width:100% !important;flex:0 0 clamp(188px,34dvh,300px) !important;height:auto !important;min-height:0 !important;
+      border-left:none !important;border-top:2px solid #0a0a0a !important;overflow:hidden !important;}
+    #side header{display:grid !important;grid-template-columns:auto 1fr auto !important;align-items:center !important;gap:6px 10px !important;padding:6px 8px !important;}
+    #side header .lab{font-size:9px !important;}
+    #goldBig{font-size:22px !important;line-height:1 !important;margin:0 !important;}
+    #goldRate{font-size:10px !important;margin:0 !important;text-align:right !important;}
+    #soulRow{grid-column:1/-1 !important;margin:0 !important;font-size:11px !important;}
+    #soulRow b{font-size:13px !important;}
+    .tabs{padding:4px 6px 0 !important;gap:4px !important;}
+    .tab{font-size:10px !important;padding:7px 3px !important;}
+    .pane{padding:6px !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch !important;}
+    .up{gap:7px !important;margin-bottom:5px !important;padding:5px 7px !important;}
+    .up .ic{width:30px !important;height:30px !important;font-size:14px !important;}
+    .up .nm{font-size:12px !important;line-height:1.15 !important;}
+    .up .lv{font-size:11px !important;}
+    .up .ds{font-size:10px !important;line-height:1.15 !important;}
+    .up .cost{font-size:14px !important;min-width:38px !important;}
+    .grp{font-size:9px !important;margin:4px 2px 5px !important;}
+    .note,.quest{margin-bottom:6px !important;padding:6px !important;font-size:11px !important;line-height:1.2 !important;}
+    #side footer{padding:5px 6px !important;gap:6px !important;}
+    .mini{font-size:10px !important;padding:7px 6px !important;}
+    #hud{top:6px !important;left:6px !important;right:52px !important;gap:4px !important;}
+    .chip{padding:2px 5px !important;}
+    .chip .k{font-size:8px !important;}
+    .chip .v{font-size:14px !important;margin-top:0 !important;}
+    #bars{bottom:8px !important;width:min(330px,86%) !important;}
+    .bar{height:14px !important;}
+    .barLab{font-size:9px !important;}
+    .title-badge{display:none !important;}
+    #pauseBtn{top:6px !important;right:6px !important;width:34px !important;height:34px !important;}
+    #audioDock{left:6px !important;bottom:calc(clamp(188px,34dvh,300px) + 8px) !important;}
+    #app.progress-hidden #audioDock{bottom:8px !important;}
+    #audioDock .cbtn{width:30px !important;height:30px !important;font-size:13px !important;}
+    #toast{top:46px !important;max-width:92% !important;padding:7px 10px !important;}
+    #toast .t1{font-size:12px !important;}#toast .t2{font-size:11px !important;}
+    #casino{max-width:94vw !important;}
+    .casBox{padding:7px 8px !important;}
+    .casWin{width:min(228px,86vw) !important;}
+    .screen{justify-content:flex-start !important;gap:10px !important;overflow-y:auto !important;overflow-x:hidden !important;-webkit-overflow-scrolling:touch !important;padding:calc(env(safe-area-inset-top,0px) + 14px) 12px 14px !important;}
+    #mainMenu{justify-content:center !important;}
+    .screen .crest{font-size:34px !important;}
+    .screenTitle{font-size:22px !important;line-height:1.22 !important;max-width:100% !important;width:min(100%,350px) !important;padding-left:0 !important;white-space:normal !important;overflow-wrap:normal !important;}
+    #mainMenu .screenTitle{font-size:18px !important;width:min(100%,330px) !important;}
+    .screenTitle.small{font-size:18px !important;}
+    .screenSub{font-size:11px !important;line-height:1.25 !important;}
+    .menuBtns,.settingsPanel{width:min(278px,calc(100vw - 24px)) !important;}
+    .menuBtns .sbtn,.settingsPanel .sbtn{width:100% !important;}
+    .settingsGrid{gap:6px !important;}
+    .sbtn{font-size:11px !important;line-height:1.2 !important;padding:10px 11px !important;min-height:38px !important;}
+    .cards{width:100% !important;max-width:none !important;gap:8px !important;align-content:flex-start !important;}
+    .card{width:min(100%,340px) !important;padding:8px !important;}
+    .card .ch{gap:8px !important;}
+    .card .cic{width:42px !important;height:42px !important;}
+    .card .cic img{width:34px !important;height:34px !important;}
+    .card .cnm{font-size:13px !important;}
+    .cbl{font-size:11px !important;line-height:1.22 !important;margin-top:6px !important;}
+    .card .ctags{gap:4px !important;margin-top:6px !important;}
+    .tag{font-size:10px !important;padding:1px 4px !important;}
+    .creditsBox{max-width:100% !important;padding:10px !important;}
+    .creditsBox p{font-size:12px !important;line-height:1.25 !important;}
+    #modal .box{width:calc(100vw - 20px) !important;max-height:calc(100dvh - 24px) !important;overflow:auto !important;padding:12px !important;}
+    #modal textarea{height:96px !important;}
+    #modal .row{gap:6px !important;}
+  }
+  @media (max-width:430px){
+    #side{flex-basis:clamp(180px,32dvh,270px) !important;}
+    #audioDock{bottom:calc(clamp(180px,32dvh,270px) + 8px) !important;}
+    #app.progress-hidden #audioDock{bottom:8px !important;}
+    #hud{max-width:calc(100vw - 58px) !important;}
+    .chip .k{font-size:7px !important;}
+    .chip .v{font-size:13px !important;}
+    .screenTitle{font-size:19px !important;}
+    #mainMenu .screenTitle{font-size:15px !important;width:min(100%,270px) !important;}
+    .menuBtns,.settingsPanel{width:min(270px,calc(100vw - 24px)) !important;}
+    .screenTitle.small{font-size:16px !important;}
+    .card{width:100% !important;}
   }
 </style>
 </head>
@@ -2465,7 +2542,7 @@ $("#loadBtn").onclick=()=>{openModal("Paste a save code, then Load","","Load");$
 
 let scene='menu',paused=false,screenshotMode=false,wallpaperMode=false;
 function hideScreens(){$('#mainMenu').style.display='none';$('#charSelect').style.display='none';$('#realmSelect').style.display='none';$('#pauseMenu').style.display='none';$('#creditsScreen').style.display='none';}
-function setPanels(on){$('#side').style.display=(on&&!G.hideProgress)?'flex':'none';$('#hud').style.display=on?'flex':'none';$('#bars').style.display=on?'block':'none';$('#pauseBtn').style.display=on?'flex':'none';$('#audioDock').style.display=on?'flex':'none';$('#cornerBtns').style.display=on?'none':'flex';const tb=document.querySelector('.title-badge');if(tb)tb.style.display=on?'block':'none';resize();}
+function setPanels(on){const app=$('#app');if(app)app.classList.toggle('progress-hidden',!!(on&&G.hideProgress));$('#side').style.display=(on&&!G.hideProgress)?'flex':'none';$('#hud').style.display=on?'flex':'none';$('#bars').style.display=on?'block':'none';$('#pauseBtn').style.display=on?'flex':'none';$('#audioDock').style.display=on?'flex':'none';$('#cornerBtns').style.display=on?'none':'flex';const tb=document.querySelector('.title-badge');if(tb)tb.style.display=on?'block':'none';resize();}
 function centerCameraNow(){if(hero){cam.x=hero.x-W/2;cam.y=hero.y-Hh/2;}}
 function enterCleanView(asWallpaper){if(scene!=='play'||!run||!run.alive)return;screenshotMode=true;wallpaperMode=!!asWallpaper;paused=false;hideScreens();modal.style.display='none';$('#death').style.display='none';$('#app').classList.add('shot');$('#app').classList.toggle('wallpaper',wallpaperMode);const c=$("#casino");if(c)c.classList.remove("show");resize();centerCameraNow();}
 function enterScreenshotMode(){enterCleanView(false);}
